@@ -1,0 +1,45 @@
+name: pinned-corpus-oracle
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  exact-oracle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Check out the exact HarfBuzz 10.2.0 source
+        uses: actions/checkout@v4
+        with:
+          repository: harfbuzz/harfbuzz
+          ref: 7b27c8edd46c674e01dd226fa9e1aa7549f5c436
+          path: .oracle-harfbuzz-source
+          persist-credentials: false
+      - name: Install development dependencies (no font artifacts are uploaded)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ninja-build pkg-config fonts-noto-core libharfbuzz0b texlive-latex-extra texlive-fonts-recommended texlive-luatex poppler-utils
+          python -m pip install -e '.[test]' 'fonttools==4.63.0' 'meson==1.7.0'
+      - name: Build the pinned HarfBuzz library with built-in Unicode functions
+        run: |
+          meson setup .oracle-harfbuzz-build .oracle-harfbuzz-source --wrap-mode=nodownload -Dbuildtype=release -Dtests=disabled -Ddocs=disabled -Dutilities=disabled -Dglib=disabled -Dgobject=disabled -Dicu=disabled -Dfreetype=disabled -Dcairo=disabled -Dintrospection=disabled
+          meson compile -C .oracle-harfbuzz-build -j 2
+      - name: Run full suite with the exact oracle gate mandatory
+        env:
+          BNTEX_REQUIRE_INTEGRATION: '1'
+          BNTEX_REQUIRE_ORACLE: '1'
+          LD_LIBRARY_PATH: ${{ github.workspace }}/.oracle-harfbuzz-build/src
+        run: python -m pytest -q
+      - name: Report mechanical and human-review status separately
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/.oracle-harfbuzz-build/src
+        run: |
+          python -m bntex.corpus check --corpus corpus/bengali-v1.json --oracle corpus/oracles/noto-serif-bengali-regular-hb10.2.0.json --font /usr/share/fonts/truetype/noto/NotoSerifBengali-Regular.ttf
+          python -m bntex.corpus review-status --corpus corpus/bengali-v1.json --oracle corpus/oracles/noto-serif-bengali-regular-hb10.2.0.json --reviews corpus/reviews/noto-serif-bengali-regular.pending.json
+# A green mechanical job does not approve typography. --require-approved is a
+# separate release gate, deliberately unmet while human reviews are outstanding.
