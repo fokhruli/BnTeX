@@ -1,0 +1,28 @@
+name: tests
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-venv libharfbuzz0b fonts-noto-core texlive-latex-extra texlive-fonts-recommended texlive-luatex poppler-utils
+          python3 -m venv .venv
+          .venv/bin/python -m pip install -e '.[test]'
+      - name: Run all tests (missing integration prerequisites fail)
+        env:
+          BNTEX_REQUIRE_INTEGRATION: '1'
+        run: .venv/bin/python -m pytest -q
+      - name: Compare word geometry with LuaLaTeX-HarfBuzz
+        run: .venv/bin/python tools/compare_reference.py --font /usr/share/fonts/truetype/noto/NotoSerifBengali-Regular.ttf
+      - name: Audit tracked filenames
+        run: .venv/bin/python tools/audit_release.py
+# This workflow is a starter definition, not evidence of an executed remote run.
+# Record/pin the tested font/TeX/HarfBuzz and action versions before a release.

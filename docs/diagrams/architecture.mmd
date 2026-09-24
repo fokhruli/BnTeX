@@ -1,0 +1,18 @@
+flowchart TB
+  subgraph PREP["A. Offline preparation — implemented"]
+    SOURCE["Literal Unicode Bengali in .tex"] --> SCAN["Conservative span scanner"]
+    FONT["User-owned static TTF + exact hash"] --> HB["HarfBuzz shaping"]
+    SCAN --> HB
+    HB --> IR["Glyph IDs / advances / offsets / clusters"]
+    FONT --> METRIC["FontTools metrics and font banks"]
+    IR --> CACHE["ASCII word cache + TFM / encodings + unchanged TTF"]
+    METRIC --> CACHE
+  end
+  subgraph COMPILE["B. Final pdfLaTeX — implemented; no shell execution"]
+    DOC["Original document + bntex.sty"] --> LOOKUP["Word/style lookup + integrity checks"]
+    LOOKUP --> GLYPHS["Native positioned font glyph word boxes"]
+    GLYPHS --> LAYOUT["Interword glue; TeX line and page breaking"]
+    LAYOUT --> PDF["PDF: embedded glyphs + original Unicode ActualText"]
+  end
+  CACHE --> LOOKUP
+  NATIVE["Future: TeX-native Bengali shaper + precompiled font profiles"] -. "reuse glyph-run renderer; no document vocabulary cache" .-> GLYPHS
