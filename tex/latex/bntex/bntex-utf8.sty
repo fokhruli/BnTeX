@@ -1,0 +1,38 @@
+%% Experimental diagnostic frontend; does not modify \bn or render Bengali.
+%% Copyright 2026 BnTeX contributors. License: MIT (see LICENSE).
+\NeedsTeXFormat{LaTeX2e}[2022-06-01]
+\RequirePackage{expl3}
+\ProvidesExplPackage{bntex-utf8}{2026-09-24}{0.1.0}{Bengali input decoder diagnostics}
+\file_input:n {bntex-utf8.def}
+\ExplSyntaxOn
+\NewDocumentCommand \BnTeXDecodeUTFviii {+m +m +m}
+  {\bntex_utfviii_decode:nTF {#1}{#2}{#3}}
+\NewDocumentCommand \BnTeXDecodeUTFviiiHex {+m +m +m}
+  {\bntex_utfviii_decode_hex:nTF {#1}{#2}{#3}}
+\NewExpandableDocumentCommand \BnTeXUTFviiiScalars {}
+  {\seq_use:Nn \l_bntex_utfviii_scalars_seq {,}}
+\NewExpandableDocumentCommand \BnTeXUTFviiiOffsets {}
+  {\seq_use:Nn \l_bntex_utfviii_offsets_seq {,}}
+\NewExpandableDocumentCommand \BnTeXUTFviiiLengths {}
+  {\seq_use:Nn \l_bntex_utfviii_lengths_seq {,}}
+\NewExpandableDocumentCommand \BnTeXUTFviiiHex {}
+  {\tl_use:N \l_bntex_utfviii_hex_tl}
+\NewExpandableDocumentCommand \BnTeXUTFviiiError {}
+  {\str_use:N \l_bntex_utfviii_error_str}
+\NewExpandableDocumentCommand \BnTeXUTFviiiErrorOffset {}
+  {\int_use:N \l_bntex_utfviii_error_offset_int}
+\NewExpandableDocumentCommand \BnTeXUTFviiiErrorStart {}
+  {\int_use:N \l_bntex_utfviii_error_start_int}
+\msg_new:nnn {bntex-utf8}{invalid}
+  {Input~rejected~(#1).~Use~literal~UTF-8;~no~replacement~characters~were~inserted.}
+\NewDocumentCommand \BnTeXRequireUTFviii {+m}
+  {
+    \bntex_utfviii_decode:nF {#1}
+      {
+        \msg_error:nnx {bntex-utf8}{invalid}
+          {\BnTeXUTFviiiError;~byte~\BnTeXUTFviiiErrorOffset;
+           ~sequence~start~\BnTeXUTFviiiErrorStart}
+      }
+  }
+\ExplSyntaxOff
+\endinput
