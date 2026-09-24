@@ -18,6 +18,9 @@ test = ["pytest>=7"]
 [project.scripts]
 bntex = "bntex.__main__:main"
 
+[tool.setuptools]
+license-files = ["LICENSE", "THIRD-PARTY-NOTICES.md"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
