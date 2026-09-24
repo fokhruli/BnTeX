@@ -1,0 +1,36 @@
+# Generated/private font assets are deliberately never distributed here.
+build/
+dist/
+.fonts/
+*.ttf
+*.otf
+*.ttc
+*.pfb
+*.pfa
+*.tfm
+*.vf
+*.enc
+*.pl
+*.map
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.egg-info/
+__pycache__/
+.pytest_cache/
+.venv/
+.DS_Store
+.bntex-build
+bntex-cache.tex
+bntex-manifest.json
+
+# Local credentials and secrets
+.env
+.env.*
+*.key
+*.pem
+credentials.json
