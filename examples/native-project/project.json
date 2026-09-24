@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "backend": "native",
+  "main": "main.tex",
+  "files": [
+    "main.tex",
+    "preamble.tex",
+    "sections/introduction.tex",
+    "sections/results.tex",
+    "references.tex",
+    "latexmkrc"
+  ]
+}

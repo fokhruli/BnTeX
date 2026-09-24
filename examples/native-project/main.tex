@@ -1,0 +1,29 @@
+\documentclass[12pt]{article}
+\input{preamble}
+\begin{document}
+\ifnum\pdfshellescape=0\else\PackageError{bntex-demo}{Shell escape must be disabled}{}\fi
+{\Large\sffamily BnTeX / Native document baseline\par}
+\vspace{8mm}
+{\LARGE\BnTeXNativeText{title}\par}
+\vspace{4mm}
+An editable, multi-file pdfLaTeX example. Bengali text uses one installed,
+regular upright font profile; English and mathematics retain their own fonts.
+No document-specific word preparation is required.
+
+\bnNative{এই নথিতে বাংলা অনুচ্ছেদ, শিরোনাম, সারণি, পাদটীকা এবং তথ্যসূত্রের উদাহরণ রয়েছে।}
+
+\tableofcontents
+\listoftables
+\listoffigures
+\vfill
+\small
+The numerical data are invented formatting examples, not research findings.
+Automatic Bengali input, additional font styles and tagged PDF accessibility
+are not claimed by this project.
+\newpage
+\input{sections/introduction}
+\newpage
+\input{sections/results}
+\input{references}
+\BnTeXNativeMemoStats
+\end{document}

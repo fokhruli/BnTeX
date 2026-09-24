@@ -13,7 +13,7 @@ readme = "README.md"
 authors = [{name = "BnTeX contributors"}]
 
 [project.optional-dependencies]
-test = ["pytest>=7"]
+test = ["pytest>=7", "pypdf>=5,<7"]
 
 [project.scripts]
 bntex = "bntex.__main__:main"

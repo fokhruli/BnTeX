@@ -79,6 +79,8 @@
       \int_add:Nn\l__bn_a_int{\__bn_get:nn{##1}{ax}}}
     \hss\pdfliteral direct{EMC}}
   \box_set_ht:Nn\l__bn_word_box{\l__bn_height_dim}\box_set_dp:Nn\l__bn_word_box{\l__bn_depth_dim}\box_use_drop:N\l__bn_word_box\group_end:}
+\cs_new_protected:Npn\__bn_typeset_word:n #1
+ {\BnTeXNativeShape{#1}\__bn_render:}
 \NewDocumentCommand\bnNative{+m}
  {\group_begin:
   \mode_if_math:T{\__bn_fail:n{use~native~Bengali~in~text~mode}}
@@ -91,7 +93,7 @@
   \seq_map_inline:Nn\l__bn_f_seq
    {\tl_if_empty:nF{##1}
      {\bool_if:NF\l__bn_f_bool{\hskip.25em~plus.12em~minus.08em\relax}\bool_set_false:N\l__bn_f_bool
-      \BnTeXNativeShape{##1}\__bn_render:}}
+      \__bn_typeset_word:n{##1}}}
   \group_end:}
 \ExplSyntaxOff
 \endinput

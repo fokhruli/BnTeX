@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "date": "2026-09-24",
+  "parent_commit": "efb9ed4189053ea919a18872bee261540aadebf8",
+  "workers_per_harness": 1,
+  "environment": "Linux / Python 3.13.5 / pdfTeX 1.40.26 (TeX Live 2025/dev/Debian)",
+  "caveats": ["Shared development host; some validation activity overlapped. No confidence intervals or hardware performance guarantee.", "Installation used the same performance implementation before addition of the load-time word-hook guard. Original installation fingerprints retained below.", "Pass 2 is a fresh TeX process with existing auxiliaries; memo state never persists.", "Distinct strings are synthetic well-formed syllable strings, not dictionary-approved words.", "Timeouts are incomplete results, not extrapolated completed-document times."],
+  "font_sha256": "32b4aeb731e3819d7a31216c885208a96e402ceeebb30fc39723b99220708fef",
+  "profile_sha256": "f6294540099a3b6f622f2cdd9e863050390f75fd0576495d5a2316903f8cfb42",
+  "measured_memo_sha256": "392d1e116051abf15d3fc0ff53fcde0b4751ad77b46ef009da0804cbab0a36c1",
+  "full_report_sha256": "aa995eacc6e6726e363b94d5b391c8a7defc0b8050c02024debf972424682b78",
+  "run_columns": ["status", "wall_s", "max_rss_kib", "user_cpu_s", "system_cpu_s", "pages", "pdf_bytes", "font_count", "bengali_font_count", "tex_memory_words", "tex_string_chars", "tex_control_sequences", "tex_fonts", "expected_page_count", "all_distinct_tokens_extracted"],
+  "rows": [
+    {"case": "001-repeated-uncached", "tokens": 200, "distinct_tokens": 20, "timeout_s": 45.0, "installation_intact": true, "runs": [["success", 20.571868, 55680, 20.51, 0.02, 1, 32638, 4, 3, 603345, 417285, 45640, 61, true, true], ["success", 21.023622, 55680, 20.97, 0.02, 1, 32638, 4, 3, 603336, 417324, 45641, 61, true, true]]},
+    {"case": "001-repeated-memo", "tokens": 200, "distinct_tokens": 20, "timeout_s": 45.0, "installation_intact": true, "runs": [["success", 2.922033, 55936, 2.88, 0.01, 1, 32638, 4, 3, 627436, 417285, 45640, 61, true, true], ["success", 3.07566, 55936, 3.02, 0.02, 1, 32638, 4, 3, 627427, 417324, 45641, 61, true, true]]},
+    {"case": "001-distinct-uncached", "tokens": 200, "distinct_tokens": 200, "timeout_s": 45.0, "installation_intact": true, "runs": [["success", 30.545409, 56064, 30.49, 0.03, 1, 30707, 4, 3, 641021, 417165, 45632, 61, true, true], ["success", 30.900021, 56064, 30.85, 0.02, 1, 30707, 4, 3, 641012, 417204, 45633, 61, true, true]]},
+    {"case": "001-distinct-memo", "tokens": 200, "distinct_tokens": 200, "timeout_s": 45.0, "installation_intact": true, "runs": [["success", 34.462574, 60032, 34.38, 0.02, 1, 30707, 4, 3, 1163019, 417165, 45632, 61, true, true], ["success", 33.859837, 60032, 33.78, 0.03, 1, 30707, 4, 3, 1163010, 417204, 45633, 61, true, true]]},
+    {"case": "010-repeated-uncached", "tokens": 2000, "distinct_tokens": 20, "timeout_s": 45.0, "installation_intact": true, "runs": [["timeout", 45.003914, null, null, null, null, null, null, null, null, null, null, null, null, null]]},
+    {"case": "010-repeated-memo", "tokens": 2000, "distinct_tokens": 20, "timeout_s": 45.0, "installation_intact": true, "runs": [["success", 10.109234, 55936, 10.04, 0.03, 10, 49976, 4, 3, 627437, 417285, 45640, 61, true, true], ["success", 10.319623, 55936, 10.23, 0.02, 10, 49976, 4, 3, 627430, 417324, 45641, 61, true, true]]},
+    {"case": "010-distinct-uncached", "tokens": 2000, "distinct_tokens": 2000, "timeout_s": 45.0, "installation_intact": true, "runs": [["timeout", 45.003924, null, null, null, null, null, null, null, null, null, null, null, null, null]]},
+    {"case": "010-distinct-memo", "tokens": 2000, "distinct_tokens": 2000, "timeout_s": 45.0, "installation_intact": true, "runs": [["timeout", 45.001794, null, null, null, null, null, null, null, null, null, null, null, null, null]]},
+    {"case": "100-repeated-uncached", "tokens": 20000, "distinct_tokens": 20, "timeout_s": 45.0, "installation_intact": true, "runs": [["timeout", 45.001638, null, null, null, null, null, null, null, null, null, null, null, null, null]]},
+    {"case": "100-repeated-memo", "tokens": 20000, "distinct_tokens": 20, "timeout_s": 45.0, "installation_intact": true, "runs": [["timeout", 45.001659, null, null, null, null, null, null, null, null, null, null, null, null, null]]},
+    {"case": "100-distinct-uncached", "tokens": 20000, "distinct_tokens": 20000, "timeout_s": 45.0, "installation_intact": true, "runs": [["timeout", 45.001693, null, null, null, null, null, null, null, null, null, null, null, null, null]]},
+    {"case": "100-distinct-memo", "tokens": 20000, "distinct_tokens": 20000, "timeout_s": 45.0, "installation_intact": true, "runs": [["timeout", 45.001736, null, null, null, null, null, null, null, null, null, null, null, null, null]]},
+    {"case": "100-repeated-memo", "tokens": 20000, "distinct_tokens": 20, "timeout_s": 180.0, "installation_intact": true, "runs": [["success", 77.848593, 55936, 77.78, 0.03, 100, 207685, 4, 3, 627438, 417285, 45640, 61, true, true], ["success", 79.756426, 55808, 79.65, 0.03, 100, 207685, 4, 3, 627433, 417324, 45641, 61, true, true]]}
+  ]
+}
