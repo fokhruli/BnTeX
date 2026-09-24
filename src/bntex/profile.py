@@ -191,8 +191,6 @@ def audit_layout(table: Any, tag: str, scripts: tuple[str, ...] = DEFAULT_SCRIPT
                     advanced.add('variation-index' if getattr(obj, 'DeltaFormat', None) == 0x8000 else 'device-adjustment')
                 if name == 'Anchor' and getattr(obj, 'Format', None) == 2:
                     advanced.add('point-index-anchor')
-            effective_types.add(effective)
-            
         if len(effective_types) != 1:
             raise ValueError(f'{where}: mixed effective extension types.')
         done[index] = {'index': index, 'type': kind, 'flags': flags, 'subtables': subtables,

@@ -1,0 +1,71 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,margin=25mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,booktabs,xcolor}
+\usepackage{bntex}
+\BnTeXLoadCache{bntex-cache.tex}
+\usepackage[unicode,hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{7pt}
+\linespread{1.18}
+\title{BnTeX: Bengali in pdfLaTeX}
+\author{Experimental native-glyph backend}
+\date{23 September 2026}
+\begin{document}
+\maketitle
+\textbf{Status:} Bengali shaping is prepared offline with HarfBuzz.
+The final PDF is compiled by pdfLaTeX with shell execution disabled.
+Bengali letters are embedded font glyphs, not raster images.
+This is not yet a zero-preparation Bengali shaper.
+
+\section{\texorpdfstring{\bn{বাংলা ভাষায় লেখা}}{Writing in Bengali}}
+\bn{বাংলা আমাদের মাতৃভাষা। বাংলাদেশ একটি সুন্দর দেশ।}
+
+\bn{শিক্ষা ও গবেষণায় প্রযুক্তির ব্যবহার গুরুত্বপূর্ণ।}
+This English sentence retains the document's Latin font and baseline.
+\bn{একই নথিতে বাংলা লেখা যায়।}
+
+\textbf{\bn{এটি মোটা অক্ষরে বাংলা লেখা।}}
+
+{\Large\bn{বড় আকারের বাংলা অক্ষর।}}
+
+{\textcolor{blue!60!black}{\bn{রঙিন বাংলা লেখা।}}}
+
+\section{Conjuncts, vowel signs, and marks}
+\bn{ক্ষ জ্ঞ ত্র শ্র দ্ধ ন্ত স্ত্র ক্ত ক্ক ক্স র্ক ক্র র্য স্বাস্থ্য প্রযুক্তি স্বাধীনতা}
+
+\bn{কি কী কু কূ কৃ কে কৈ কো কৌ কাঁ কর্ম ধর্ম অর্থ সূর্য দৃষ্টি}
+
+\bn{ড় ঢ় য় ০১২৩৪৫৬৭৮৯ ১২৩।}
+
+\newpage
+\section{Mathematics and tables}
+\bn{একটি সাধারণ সমীকরণ হলো}
+\[
+    x_{t+1}=f(x_t,u_t)+w_t.
+\]
+\bn{এখানে} \(x_t\) \bn{সিস্টেমের অবস্থা এবং} \(u_t\) \bn{নিয়ন্ত্রণ ইনপুট।}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+English & Bengali \\
+\midrule
+Learning & \bn{শিক্ষা} \\
+Research & \bn{গবেষণা} \\
+Technology & \bn{প্রযুক্তি} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Paragraph wrapping}
+\begin{minipage}{0.62\linewidth}
+\bn{বাংলা ভাষায় গবেষণার বিষয় সহজভাবে ব্যাখ্যা করা গুরুত্বপূর্ণ। এই পরীক্ষায় বাংলা শব্দের মধ্যে সাধারণ ফাঁক রাখা হয়েছে। লাইন পরিবর্তনের কাজ করে মূল ল্যাটেক্স ইঞ্জিন। নতুন শব্দ যোগ করলে প্রস্তুতির ধাপ আবার চালাতে হবে।}
+\end{minipage}
+
+\smallskip
+\small Scope: literal \texttt{\string\bn} spans, static TrueType fonts, upright/real
+bold styles, and breaks at ordinary spaces. Hyphenation, automatic script detection,
+full PDF accessibility, and automatic Bengali bookmarks remain future work.
+\end{document}
