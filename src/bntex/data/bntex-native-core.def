@@ -1,0 +1,241 @@
+%% BnTeX native shaping state. Copyright 2026 BnTeX contributors.
+%% Indic algorithms adapted from HarfBuzz 10.2.0; see THIRD-PARTY-NOTICES.md.
+\ProvidesExplFile{bntex-native-core.def}{2026-09-24}{0.1.0}{Native shaping state and syllables}
+\clist_const:Nn \c__bn_fields_clist {gid,cp,cl,cat,pos,syl,mask,lig,mult,ax,ay,dx,dy,parent,lid,comp,num,unsafe,origin,pen}
+\clist_map_inline:Nn \c__bn_fields_clist {\intarray_new:cn {g__bn_#1_intarray}{8192}}
+\intarray_new:Nn \g__bn_order_intarray {8192}
+\int_new:N \g__bn_count_int
+\int_new:N \g__bn_allocated_int
+\int_new:N \g__bn_newid_int
+\int_new:N \g__bn_ops_int
+\int_new:N \g__bn_ligid_int
+\int_new:N \g__bn_depth_int
+\int_new:N \g__bn_next_int
+\int_new:N \g__bn_found_int
+\int_new:N \g__bn_trace_cells_int
+\bool_new:N \g__bn_success_bool
+\bool_new:N \g__bn_ignore_bool
+\bool_new:N \g__bn_trace_bool
+\bool_new:N \g__bn_busy_bool
+\bool_new:N \g__bn_loaded_bool
+\seq_new:N \g__bn_match_seq
+\prop_new:N \g__bn_kinds_prop
+\tl_new:N \g__bn_original_hex_tl
+\tl_new:N \g__bn_utf_sixteen_tl
+\clist_map_inline:nn {a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z}
+ {\int_new:c {l__bn_#1_int}}
+\clist_map_inline:nn {a,b,c,d,e,f}
+ {\seq_new:c {l__bn_#1_seq}\tl_new:c {l__bn_#1_tl}\bool_new:c {l__bn_#1_bool}}
+\prop_new:N \l__bn_seen_prop
+\msg_new:nnn {bntex-native}{error}{Native~Bengali~shaping~rejected:~#1.}
+\cs_new_protected:Npn \__bn_fail:n #1 {\msg_fatal:nnx {bntex-native}{error}{#1}}
+\cs_new:Npn \__bn_tab:n #1 {\cs_if_exist_use:cF {__bnp_#1}{0}}
+\cs_new:Npn \__bn_id:n #1 {\intarray_item:Nn \g__bn_order_intarray {#1+1}}
+\cs_new:Npn \__bn_field:nn #1#2 {\intarray_item:cn {g__bn_#2_intarray}{#1}}
+\cs_new:Npn \__bn_get:nn #1#2 {\__bn_field:nn {\__bn_id:n {#1}}{#2}}
+\cs_new_protected:Npn \__bn_setid:nnn #1#2#3 {\intarray_gset:cnn {g__bn_#2_intarray}{#1}{#3}}
+\cs_new_protected:Npn \__bn_set:nnn #1#2#3 {\__bn_setid:nnn {\__bn_id:n {#1}}{#2}{#3}}
+% Static character-category membership; expandable inside boolean expressions.
+% These sets describe grammar classes, never words or shaped vocabulary.
+\cs_new:cpn{__bn_catset_1_1}{1}
+\cs_new:cpn{__bn_catset_1,2,3,10,11_1}{1}
+\cs_new:cpn{__bn_catset_1,2,3,10,11_2}{1}
+\cs_new:cpn{__bn_catset_1,2,3,10,11_3}{1}
+\cs_new:cpn{__bn_catset_1,2,3,10,11_10}{1}
+\cs_new:cpn{__bn_catset_1,2,3,10,11_11}{1}
+\cs_new:cpn{__bn_catset_10,11,12_10}{1}
+\cs_new:cpn{__bn_catset_10,11,12_11}{1}
+\cs_new:cpn{__bn_catset_10,11,12_12}{1}
+\cs_new:cpn{__bn_catset_4,5_4}{1}
+\cs_new:cpn{__bn_catset_4,5_5}{1}
+\cs_new:cpn{__bn_catset_4,5,6,7_4}{1}
+\cs_new:cpn{__bn_catset_4,5,6,7_5}{1}
+\cs_new:cpn{__bn_catset_4,5,6,7_6}{1}
+\cs_new:cpn{__bn_catset_4,5,6,7_7}{1}
+\cs_new:cpn{__bn_catset_5_5}{1}
+\cs_new:cpn{__bn_catset_5,8_5}{1}
+\cs_new:cpn{__bn_catset_5,8_8}{1}
+\cs_new:cpn{__bn_catset_6_6}{1}
+\cs_new:cpn{__bn_catset_6,7_6}{1}
+\cs_new:cpn{__bn_catset_6,7_7}{1}
+\cs_new:cpn{__bn_catset_7_7}{1}
+\cs_new:cpn{__bn_catset_8_8}{1}
+\cs_new:cpn{__bn_catset_9_9}{1}
+\prg_new_conditional:Npnn \__bn_cat:nn #1#2 {p,T,F,TF}
+ {\cs_if_exist:cTF{__bn_catset_#2_\__bn_get:nn{#1}{cat}}
+  {\prg_return_true:}{\prg_return_false:}}
+\prg_new_conditional:Npnn \__bn_mask:nn #1#2 {p,T,F,TF}
+ {\int_compare:nNnTF {\__bn_tab:n{mask_\int_eval:n{#1}_\int_eval:n{#2}}}={1}{\prg_return_true:}{\prg_return_false:}}
+\cs_new_protected:Npn \__bn_addmask:nn #1#2
+ {\int_compare:nNnT {\int_mod:nn{\int_div_truncate:nn{\__bn_get:nn{#1}{mask}}{#2}}{2}}={0}
+   {\__bn_set:nnn{#1}{mask}{\__bn_get:nn{#1}{mask}+#2}}}
+\cs_new_protected:Npn \__bn_delmask:nn #1#2
+ {\int_compare:nNnT {\int_mod:nn{\int_div_truncate:nn{\__bn_get:nn{#1}{mask}}{#2}}{2}}={1}
+   {\__bn_set:nnn{#1}{mask}{\__bn_get:nn{#1}{mask}-#2}}}
+\cs_new_protected:Npn \__bn_tick:
+ {\int_gincr:N \g__bn_ops_int
+  \int_compare:nNnT {\g__bn_ops_int}>{2000000}{\__bn_fail:n{operation~budget~exceeded}}}
+\cs_new_protected:Npn \__bn_allocate:
+ {\int_compare:nNnF {\g__bn_allocated_int}<{8192}{\__bn_fail:n{node~budget~exceeded}}
+  \int_gincr:N \g__bn_allocated_int \int_gset_eq:NN \g__bn_newid_int \g__bn_allocated_int
+  \clist_map_inline:Nn \c__bn_fields_clist {\__bn_setid:nnn{\g__bn_newid_int}{##1}{0}}
+  \__bn_setid:nnn{\g__bn_newid_int}{num}{1}\__bn_setid:nnn{\g__bn_newid_int}{parent}{-1}
+  \__bn_setid:nnn{\g__bn_newid_int}{syl}{-1}}
+\cs_new_protected:Npn \__bn_clone:n #1
+ {\use:e{\exp_not:N\__bn_clone_args:n{\int_eval:n{#1}}}}
+\cs_new_protected:Npn \__bn_clone_args:n #1
+ {\group_begin:\int_set:Nn\l__bn_a_int{#1}\__bn_allocate:
+  \clist_map_inline:Nn\c__bn_fields_clist{\__bn_setid:nnn{\g__bn_newid_int}{##1}{\__bn_field:nn{\l__bn_a_int}{##1}}}
+  \group_end:}
+\cs_new_protected:Npn \__bn_insert:nn #1#2
+ {\use:e{\exp_not:N\__bn_insert_args:nn{\int_eval:n{#1}}{\int_eval:n{#2}}}}
+\cs_new_protected:Npn \__bn_insert_args:nn #1#2
+ {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_b_int{#2}
+  \int_compare:nNnF{\g__bn_count_int}<{8192}{\__bn_fail:n{glyph~budget~exceeded}}
+  \int_step_inline:nnnn{\g__bn_count_int-1}{-1}{\l__bn_a_int}
+   {\intarray_gset:Nnn\g__bn_order_intarray{##1+2}{\__bn_id:n{##1}}}
+  \intarray_gset:Nnn\g__bn_order_intarray{\l__bn_a_int+1}{\l__bn_b_int}
+  \int_gincr:N\g__bn_count_int\group_end:}
+\cs_new_protected:Npn \__bn_remove:n #1
+ {\use:e{\exp_not:N\__bn_remove_args:n{\int_eval:n{#1}}}}
+\cs_new_protected:Npn \__bn_remove_args:n #1
+ {\group_begin:\int_set:Nn\l__bn_a_int{#1}
+  \int_step_inline:nnnn{\l__bn_a_int}{1}{\g__bn_count_int-2}
+   {\intarray_gset:Nnn\g__bn_order_intarray{##1+1}{\__bn_id:n{##1+1}}}
+  \int_gdecr:N\g__bn_count_int\group_end:}
+\cs_new_protected:Npn \__bn_move:nn #1#2
+ {\use:e{\exp_not:N\__bn_move_args:nn{\int_eval:n{#1}}{\int_eval:n{#2}}}}
+\cs_new_protected:Npn \__bn_move_args:nn #1#2
+ {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_b_int{#2}
+  \int_set:Nn\l__bn_c_int{\__bn_id:n{\l__bn_a_int}}
+  \__bn_remove:n{\l__bn_a_int}\__bn_insert:nn{\l__bn_b_int}{\l__bn_c_int}\group_end:}
+\cs_new_protected:Npn \__bn_find:n #1
+ {\use:e{\exp_not:N\__bn_find_args:n{\int_eval:n{#1}}}}
+\cs_new_protected:Npn \__bn_find_args:n #1
+ {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_gset:Nn\g__bn_found_int{-1}
+  \int_step_inline:nnnn{0}{1}{\g__bn_count_int-1}
+   {\int_compare:nNnT{\__bn_id:n{##1}}={\l__bn_a_int}{\int_gset:Nn\g__bn_found_int{##1}}}
+  \group_end:}
+\cs_new_protected:Npn \__bn_unsafe:nn #1#2
+ {\use:e{\exp_not:N\__bn_unsafe_args:nn{\int_eval:n{#1}}{\int_eval:n{#2}}}}
+\cs_new_protected:Npn \__bn_unsafe_args:nn #1#2
+ {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_b_int{#2}
+  \int_compare:nNnT{\l__bn_b_int}>{\l__bn_a_int}
+   {\int_set:Nn\l__bn_c_int{2147483647}
+    \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_b_int-1}
+     {\int_set:Nn\l__bn_c_int{\int_min:nn{\l__bn_c_int}{\__bn_get:nn{##1}{cl}}}}
+    \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_b_int-1}
+     {\int_compare:nNnF{\__bn_get:nn{##1}{cl}}={\l__bn_c_int}{\__bn_set:nnn{##1}{unsafe}{1}}}}
+  \group_end:}
+\cs_new_protected:Npn \__bn_merge:nn #1#2
+ {\use:e{\exp_not:N\__bn_merge_args:nn{\int_eval:n{#1}}{\int_eval:n{#2}}}}
+\cs_new_protected:Npn \__bn_merge_args:nn #1#2
+ {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_b_int{#2}
+  \int_compare:nNnT{\l__bn_b_int}>{\l__bn_a_int}
+   {\int_set:Nn\l__bn_c_int{2147483647}
+    \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_b_int-1}
+     {\int_set:Nn\l__bn_c_int{\int_min:nn{\l__bn_c_int}{\__bn_get:nn{##1}{cl}}}}
+    \bool_set_true:N\l__bn_a_bool
+    \bool_while_do:nn{\int_compare_p:n{\l__bn_a_int>0} && \l__bn_a_bool}
+     {\int_compare:nNnTF{\__bn_get:nn{\l__bn_a_int-1}{cl}}={\__bn_get:nn{\l__bn_a_int}{cl}}
+       {\int_decr:N\l__bn_a_int}{\bool_set_false:N\l__bn_a_bool}}
+    \bool_set_true:N\l__bn_a_bool
+    \bool_while_do:nn{\int_compare_p:n{\l__bn_b_int<\g__bn_count_int} && \l__bn_a_bool}
+     {\int_compare:nNnTF{\__bn_get:nn{\l__bn_b_int}{cl}}={\__bn_get:nn{\l__bn_b_int-1}{cl}}
+       {\int_incr:N\l__bn_b_int}{\bool_set_false:N\l__bn_a_bool}}
+    \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_b_int-1}
+     {\int_compare:nNnF{\__bn_get:nn{##1}{cl}}={\l__bn_c_int}{\__bn_set:nnn{##1}{unsafe}{0}}
+      \__bn_set:nnn{##1}{cl}{\l__bn_c_int}}}
+  \group_end:}
+\cs_new_protected:Npn \__bn_snapshot:n #1
+ {\bool_if:NT\g__bn_trace_bool
+   {\int_gadd:Nn\g__bn_trace_cells_int{\g__bn_count_int}
+    \int_compare:nNnT{\g__bn_trace_cells_int}>{200000}{\__bn_fail:n{trace~budget~exceeded}}
+    \iow_term:x{BNTEX-STAGE|#1|\int_use:N\g__bn_count_int}
+    \int_step_inline:nnnn{0}{1}{\g__bn_count_int-1}
+     {\iow_term:x{BNTEX-NODE|##1|\__bn_get:nn{##1}{gid}|\__bn_get:nn{##1}{cl}|\__bn_get:nn{##1}{pos}|\__bn_get:nn{##1}{mask}|\__bn_get:nn{##1}{syl}}}}}
+\cs_new_protected:Npn \__bn_append_cp:nn #1#2
+ {\use:e{\exp_not:N\__bn_append_cp_args:nn{\int_eval:n{#1}}{\int_eval:n{#2}}}}
+\cs_new_protected:Npn \__bn_append_cp_args:nn #1#2
+ {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_b_int{#2}
+  \__bn_allocate:
+  \__bn_setid:nnn{\g__bn_newid_int}{cp}{\l__bn_a_int}
+  \__bn_setid:nnn{\g__bn_newid_int}{gid}{\__bn_tab:n{cp_\int_use:N\l__bn_a_int _g}}
+  \int_set:Nn\l__bn_c_int{\__bn_tab:n{cp_\int_use:N\l__bn_a_int _c}}
+  \__bn_setid:nnn{\g__bn_newid_int}{cat}{\l__bn_c_int}
+  \__bn_setid:nnn{\g__bn_newid_int}{pos}{\__bn_tab:n{cp_\int_use:N\l__bn_a_int _p}}
+  \__bn_setid:nnn{\g__bn_newid_int}{origin}{\l__bn_b_int}
+  \int_compare:nNnT{\g__bn_count_int}>{0}
+   {\exp_args:Nne\clist_if_in:nnT{4,5,6,8,9}{\int_use:N\l__bn_c_int}
+     {\int_set:Nn\l__bn_b_int{\__bn_get:nn{\g__bn_count_int-1}{cl}}}}
+  \__bn_setid:nnn{\g__bn_newid_int}{cl}{\l__bn_b_int}
+  \__bn_insert:nn{\g__bn_count_int}{\g__bn_newid_int}\group_end:}
+\cs_new_protected:Npn \__bn_normalize:
+ {\group_begin:\int_zero:N\l__bn_c_int
+  \int_step_inline:nn{\seq_count:N\l_bntex_utfviii_scalars_seq}
+   {\int_set:Nn\l__bn_a_int{\seq_item:Nn\l_bntex_utfviii_scalars_seq{##1}}
+    \int_set:Nn\l__bn_b_int{\seq_item:Nn\l_bntex_utfviii_offsets_seq{##1}}
+    \int_compare:nNnT{\__bn_tab:n{cp_\int_use:N\l__bn_a_int _g}}={0}
+     {\__bn_fail:n{unsupported~scalar~U+\int_to_Hex:n{\l__bn_a_int}~at~byte~\int_use:N\l__bn_b_int}}
+    \int_compare:nNnT{\l__bn_a_int}={2492}
+     {\int_compare:nNnT{\l__bn_c_int}={2492}{\__bn_fail:n{repeated~nukta}}
+      \int_set:Nn\l__bn_d_int{\__bn_tab:n{cp_\int_use:N\l__bn_c_int _c}}
+      \bool_if:nT{\int_compare_p:n{\l__bn_d_int=8} || \int_compare_p:n{\l__bn_d_int=9}}{\__bn_fail:n{nukta~after~a~vowel/sign}}}
+    \bool_if:nT{\int_compare_p:n{\l__bn_a_int=8204} || \int_compare_p:n{\l__bn_a_int=8205}}
+     {\bool_if:nT{\int_compare_p:n{\l__bn_c_int=8204} || \int_compare_p:n{\l__bn_c_int=8205}}{\__bn_fail:n{consecutive~join~controls}}}
+    \int_case:nnF{\l__bn_a_int}
+     {{2507}{\__bn_append_cp:nn{2503}{\l__bn_b_int}\__bn_append_cp:nn{2494}{\l__bn_b_int}}
+      {2508}{\__bn_append_cp:nn{2503}{\l__bn_b_int}\__bn_append_cp:nn{2519}{\l__bn_b_int}}
+      {2527}{\__bn_append_cp:nn{2479}{\l__bn_b_int}\__bn_append_cp:nn{2492}{\l__bn_b_int}}}
+     {\__bn_append_cp:nn{\l__bn_a_int}{\l__bn_b_int}}
+    \int_set_eq:NN\l__bn_c_int\l__bn_a_int}
+  \int_step_inline:nnnn{1}{1}{\g__bn_count_int-1}
+   {\bool_if:nT{\int_compare_p:n{\__bn_get:nn{##1}{cp}=2492} && \int_compare_p:n{\__bn_get:nn{##1-1}{cp}=2509}}
+     {\__bn_move:nn{##1}{##1-1}}}
+  \int_zero:N\l__bn_a_int
+  \int_while_do:nn{\l__bn_a_int+1<\g__bn_count_int}
+   {\bool_if:nT{\int_compare_p:n{\__bn_get:nn{\l__bn_a_int}{cp}=2479} && \int_compare_p:n{\__bn_get:nn{\l__bn_a_int+1}{cp}=2492}}
+     {\__bn_set:nnn{\l__bn_a_int}{cp}{2527}\__bn_set:nnn{\l__bn_a_int}{gid}{\__bn_tab:n{cp_2527_g}}\__bn_remove:n{\l__bn_a_int+1}}
+    \int_incr:N\l__bn_a_int}
+  \__bn_snapshot:n{normalized}\group_end:}
+\cs_new_protected:Npn \__bn_syllables:
+ {\group_begin:\int_zero:N\l__bn_a_int\int_zero:N\l__bn_s_int\int_zero:N\l__bn_z_int
+  \int_while_do:nn{\l__bn_a_int<\g__bn_count_int}
+   {\int_set_eq:NN\l__bn_b_int\l__bn_a_int\int_set:Nn\l__bn_c_int{1}
+    \int_set:Nn\l__bn_d_int{-1}\int_zero:N\l__bn_e_int
+    \bool_while_do:nn{\int_compare_p:n{\l__bn_b_int<\g__bn_count_int} && \int_compare_p:n{\l__bn_b_int<\l__bn_a_int+65} && \int_compare_p:n{\l__bn_c_int>0}}
+     {\int_set:Nn\l__bn_c_int{\__bn_tab:n{dfa_\int_use:N\l__bn_c_int _\__bn_get:nn{\l__bn_b_int}{cat}}}
+      \int_compare:nNnT{\l__bn_c_int}>{0}
+       {\int_set:Nn\l__bn_f_int{\__bn_tab:n{accept_\int_use:N\l__bn_c_int}}
+        \int_compare:nNnT{\l__bn_f_int}>{0}{\int_set:Nn\l__bn_d_int{\l__bn_b_int+1}\int_set_eq:NN\l__bn_e_int\l__bn_f_int}}
+      \int_incr:N\l__bn_b_int}
+    \int_compare:nNnF{\l__bn_d_int}>{\l__bn_a_int}{\__bn_fail:n{syllable~parse}}
+    \int_compare:nNnT{\l__bn_d_int-\l__bn_a_int}>{64}{\__bn_fail:n{syllable~exceeds~64~working~scalars}}
+    \seq_clear:N\l__bn_a_seq\int_zero:N\l__bn_f_int\bool_set_false:N\l__bn_a_bool
+    \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_d_int-1}
+     {\__bn_set:nnn{##1}{syl}{\l__bn_s_int}
+      \__bn_cat:nnT{##1}{8}{\seq_put_right:Nx\l__bn_a_seq{\__bn_get:nn{##1}{cp}}}
+      \__bn_cat:nnT{##1}{9}{\int_incr:N\l__bn_f_int}
+      \__bn_cat:nnT{##1}{1}{\bool_set_true:N\l__bn_a_bool}
+      \int_compare:nNnT{##1}>{\l__bn_a_int}
+       {\__bn_cat:nnT{##1}{4,5}{\int_compare:nNnT{\__bn_get:nn{##1}{cat}}={\__bn_get:nn{##1-1}{cat}}{\__bn_fail:n{repeated~marks}}}}}
+    \int_compare:nNnT{\l__bn_f_int}>{1}{\__bn_fail:n{repeated~terminal~signs}}
+    \int_compare:nNnT{\seq_count:N\l__bn_a_seq}>{1}
+     {\tl_set:Nx\l__bn_a_tl{\seq_use:Nn\l__bn_a_seq{,}}
+      \bool_if:nF{\str_if_eq_p:Vn\l__bn_a_tl{2503,2494} || \str_if_eq_p:Vn\l__bn_a_tl{2503,2519}}{\__bn_fail:n{multiple~dependent~vowels}}}
+    \bool_if:nT{\int_compare_p:n{\l__bn_e_int=2} && \int_compare_p:n{\seq_count:N\l__bn_a_seq>0} && !\l__bn_a_bool}{\__bn_fail:n{dependent~on~independent~vowel}}
+    \prop_gput:Nxx\g__bn_kinds_prop{\int_use:N\l__bn_s_int}{\int_use:N\l__bn_e_int}
+    \__bn_unsafe:nn{\l__bn_a_int}{\l__bn_d_int}
+    \int_compare:nNnT{\l__bn_e_int}={4}{\int_incr:N\l__bn_z_int}
+    \int_incr:N\l__bn_s_int\int_set_eq:NN\l__bn_a_int\l__bn_d_int}
+  \int_compare:nNnT{\l__bn_z_int}>{0}
+   {\int_compare:nNnF{\l__bn_s_int}={1}{\__bn_fail:n{broken~cluster~with~surrounding~text}}
+    \int_step_inline:nnnn{0}{1}{\g__bn_count_int-1}{\__bn_cat:nnT{##1}{6,7}{\__bn_fail:n{broken~cluster~with~join~control}}}
+    \__bn_allocate:\__bn_setid:nnn{\g__bn_newid_int}{cp}{9676}
+    \__bn_setid:nnn{\g__bn_newid_int}{gid}{\__bn_tab:n{cp_9676_g}}
+    \__bn_setid:nnn{\g__bn_newid_int}{cl}{\__bn_get:nn{0}{cl}}
+    \__bn_setid:nnn{\g__bn_newid_int}{cat}{11}\__bn_setid:nnn{\g__bn_newid_int}{pos}{4}
+    \__bn_setid:nnn{\g__bn_newid_int}{syl}{0}\__bn_insert:nn{0}{\g__bn_newid_int}}
+  \__bn_snapshot:n{syllables}\group_end:}
+\ExplSyntaxOff
+\endinput

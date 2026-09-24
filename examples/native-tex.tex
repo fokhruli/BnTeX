@@ -1,0 +1,24 @@
+\documentclass[12pt]{article}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath}
+\usepackage{bntex-native}
+\BnTeXNativeLoadProfile{bntex-native-profile.tex}
+\begin{document}
+\section*{BnTeX: native Bengali in pdfLaTeX}
+This example uses a reusable font installation, not a prepared-word cache.
+Edit the Bengali text below and compile again with pdfLaTeX only.
+\par\bigskip
+\bnNative{বাংলা ভাষায় নতুন শব্দ লেখা যায়। শিক্ষকসম্মেলনের আলোচনায় প্রযুক্তির
+ব্যবহার এবং শিক্ষার্থীদের গবেষণার বিষয় উঠে এসেছে।}
+\par\medskip
+\bnNative{অণুজীবপ্রযুক্তিগত পুনর্বিন্যাসসমূহ দূরনিয়ন্ত্রণযোগ্যতা}
+\par\medskip
+\bnNative{কর্ম সূর্য স্বাস্থ্য প্রযুক্তি ক্ষ জ্ঞ হ্ম রু রূ শু গু হু হৃ ত্রু ন্তু স্তু}
+\par\medskip
+\bnNative{০১২৩৪৫৬৭৮৯}
+\[
+x_{t+1}=f(x_t,u_t)+w_t.
+\]
+The equation and this English text stay outside the Bengali text command.
+Only the pinned regular upright Bengali font is supported in this prototype.
+\end{document}
