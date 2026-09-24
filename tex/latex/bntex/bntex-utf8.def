@@ -1,0 +1,286 @@
+%% BnTeX experimental UTF-8 decoder. Copyright 2026 BnTeX contributors.
+%% License: MIT (see LICENSE). No shaping, normalization, or external calls.
+\RequirePackage{expl3}
+\ProvidesExplFile{bntex-utf8.def}{2026-09-24}{0.1.0}{Strict pdfTeX UTF-8 decoder}
+\cs_if_exist:NT \bntex_utfviii_decode:nTF {\ExplSyntaxOff\endinput}
+\msg_new:nnn {bntex-utf8}{engine}{The~UTF-8~front~end~requires~pdfTeX.}
+\sys_if_engine_pdftex:F {\msg_fatal:nn {bntex-utf8}{engine}}
+
+% All results are local to the caller's current TeX group. Offsets are zero-based.
+% Byte and hex outputs describe the argument AFTER TeX's mouth has tokenized it.
+\seq_new:N \l_bntex_utfviii_bytes_seq
+\tl_new:N  \l_bntex_utfviii_hex_tl
+\seq_new:N \l_bntex_utfviii_scalars_seq
+\seq_new:N \l_bntex_utfviii_offsets_seq
+\seq_new:N \l_bntex_utfviii_lengths_seq
+\str_new:N \l_bntex_utfviii_error_str
+\int_new:N \l_bntex_utfviii_error_offset_int
+\int_new:N \l_bntex_utfviii_error_start_int
+\int_const:Nn \c_bntex_utfviii_max_bytes_int {4096}
+
+\int_new:N \l__bntex_utfviii_at_int
+\int_new:N \l__bntex_utfviii_start_int
+\int_new:N \l__bntex_utfviii_value_int
+\int_new:N \l__bntex_utfviii_left_int
+\int_new:N \l__bntex_utfviii_width_int
+\int_new:N \l__bntex_utfviii_low_int
+\int_new:N \l__bntex_utfviii_high_int
+\int_new:N \l__bntex_utfviii_nibble_int
+\int_new:N \l__bntex_utfviii_digit_int
+\int_new:N \l__bntex_utfviii_hex_at_int
+\int_new:N \l__bntex_utfviii_char_int
+
+\cs_new_protected:Npn \__bntex_utfviii_clear_decoded:
+  {
+    \seq_clear:N \l_bntex_utfviii_scalars_seq
+    \seq_clear:N \l_bntex_utfviii_offsets_seq
+    \seq_clear:N \l_bntex_utfviii_lengths_seq
+  }
+\cs_new_protected:Npn \__bntex_utfviii_reset:
+  {
+    \seq_clear:N \l_bntex_utfviii_bytes_seq
+    \tl_clear:N \l_bntex_utfviii_hex_tl
+    \__bntex_utfviii_clear_decoded:
+    \str_clear:N \l_bntex_utfviii_error_str
+    \int_set:Nn \l_bntex_utfviii_error_offset_int {-1}
+    \int_set:Nn \l_bntex_utfviii_error_start_int {-1}
+    \int_zero:N \l__bntex_utfviii_at_int
+    \int_zero:N \l__bntex_utfviii_start_int
+    \int_zero:N \l__bntex_utfviii_value_int
+    \int_zero:N \l__bntex_utfviii_left_int
+    \int_zero:N \l__bntex_utfviii_width_int
+    \int_set:Nn \l__bntex_utfviii_low_int {128}
+    \int_set:Nn \l__bntex_utfviii_high_int {191}
+  }
+\cs_new_protected:Npn \__bntex_utfviii_fail:nnn #1#2#3
+  {
+    \str_if_empty:NT \l_bntex_utfviii_error_str
+      {
+        \str_set:Nn \l_bntex_utfviii_error_str {#1}
+        \int_set:Nn \l_bntex_utfviii_error_offset_int {#2}
+        \int_set:Nn \l_bntex_utfviii_error_start_int {#3}
+      }
+  }
+\cs_new_protected:Npn \__bntex_utfviii_push_byte:n #1
+  {
+    \seq_put_right:Nx \l_bntex_utfviii_bytes_seq {\int_eval:n {#1}}
+    \tl_put_right:Nx \l_bntex_utfviii_hex_tl
+      {\int_compare:nNnT {#1} < {16} {0}\int_to_Hex:n {#1}}
+  }
+\cs_new_protected:Npn \__bntex_utfviii_emit:
+  {
+    \seq_put_right:Nx \l_bntex_utfviii_scalars_seq
+      {\int_use:N \l__bntex_utfviii_value_int}
+    \seq_put_right:Nx \l_bntex_utfviii_offsets_seq
+      {\int_use:N \l__bntex_utfviii_start_int}
+    \seq_put_right:Nx \l_bntex_utfviii_lengths_seq
+      {\int_use:N \l__bntex_utfviii_width_int}
+  }
+\cs_new_protected:Npn \__bntex_utfviii_begin:nnn #1#2#3
+  {
+    \int_set:Nn \l__bntex_utfviii_value_int {#1}
+    \int_set:Nn \l__bntex_utfviii_width_int {#2}
+    \int_set:Nn \l__bntex_utfviii_left_int {#2-1}
+    \int_set:Nn \l__bntex_utfviii_low_int {128}
+    \int_set:Nn \l__bntex_utfviii_high_int {191}
+    #3
+  }
+% RFC 3629 section 4: constrain the first continuation byte, not merely the
+% final scalar. This rejects overlong/surrogate/out-of-range prefixes early.
+\cs_new_protected:Npn \__bntex_utfviii_lead:n #1
+  {
+    \int_set_eq:NN \l__bntex_utfviii_start_int \l__bntex_utfviii_at_int
+    \int_compare:nNnTF {#1} < {128}
+      {
+        \int_set:Nn \l__bntex_utfviii_value_int {#1}
+        \int_set:Nn \l__bntex_utfviii_width_int {1}
+        \__bntex_utfviii_emit:
+      }
+      {
+        \int_compare:nNnTF {#1} < {194}
+          {
+            \int_compare:nNnTF {#1} < {192}
+              {\__bntex_utfviii_bad:n {stray-continuation}}
+              {\__bntex_utfviii_bad:n {overlong}}
+          }
+          {
+            \int_compare:nNnTF {#1} < {224}
+              {\__bntex_utfviii_begin:nnn {#1-192}{2}{}}
+              {
+                \int_compare:nNnTF {#1} < {240}
+                  {
+                    \__bntex_utfviii_begin:nnn {#1-224}{3}
+                      {
+                        \int_compare:nNnT {#1} = {224}
+                          {\int_set:Nn \l__bntex_utfviii_low_int {160}}
+                        \int_compare:nNnT {#1} = {237}
+                          {\int_set:Nn \l__bntex_utfviii_high_int {159}}
+                      }
+                  }
+                  {
+                    \int_compare:nNnTF {#1} < {245}
+                      {
+                        \__bntex_utfviii_begin:nnn {#1-240}{4}
+                          {
+                            \int_compare:nNnT {#1} = {240}
+                              {\int_set:Nn \l__bntex_utfviii_low_int {144}}
+                            \int_compare:nNnT {#1} = {244}
+                              {\int_set:Nn \l__bntex_utfviii_high_int {143}}
+                          }
+                      }
+                      {
+                        \int_compare:nNnTF {#1} < {248}
+                          {\__bntex_utfviii_bad:n {out-of-range}}
+                          {\__bntex_utfviii_bad:n {invalid-lead}}
+                      }
+                  }
+              }
+          }
+      }
+  }
+\cs_new_protected:Npn \__bntex_utfviii_bad:n #1
+  {
+    \__bntex_utfviii_fail:nnn {#1}
+      {\l__bntex_utfviii_at_int}{\l__bntex_utfviii_start_int}
+  }
+\cs_new_protected:Npn \__bntex_utfviii_tail:n #1
+  {
+    \bool_lazy_or:nnTF
+      {\int_compare_p:nNn {#1} < {128}}
+      {\int_compare_p:nNn {#1} > {191}}
+      {\__bntex_utfviii_bad:n {bad-continuation}}
+      {
+        \int_compare:nNnTF {#1} < {\l__bntex_utfviii_low_int}
+          {\__bntex_utfviii_bad:n {overlong}}
+          {
+            \int_compare:nNnTF {#1} > {\l__bntex_utfviii_high_int}
+              {
+                \int_compare:nNnTF {\l__bntex_utfviii_width_int} = {3}
+                  {\__bntex_utfviii_bad:n {surrogate}}
+                  {\__bntex_utfviii_bad:n {out-of-range}}
+              }
+              {
+                \int_set:Nn \l__bntex_utfviii_value_int
+                  {64*\l__bntex_utfviii_value_int+#1-128}
+                \int_decr:N \l__bntex_utfviii_left_int
+                \int_set:Nn \l__bntex_utfviii_low_int {128}
+                \int_set:Nn \l__bntex_utfviii_high_int {191}
+                \int_compare:nNnT {\l__bntex_utfviii_left_int} = {0}
+                  {\__bntex_utfviii_emit:}
+              }
+          }
+      }
+  }
+\cs_new_protected:Npn \__bntex_utfviii_run:
+  {
+    \seq_map_inline:Nn \l_bntex_utfviii_bytes_seq
+      {
+        \str_if_empty:NT \l_bntex_utfviii_error_str
+          {
+            \int_compare:nNnTF {\l__bntex_utfviii_left_int} = {0}
+              {\__bntex_utfviii_lead:n {##1}}
+              {\__bntex_utfviii_tail:n {##1}}
+          }
+        \int_incr:N \l__bntex_utfviii_at_int
+      }
+    \str_if_empty:NT \l_bntex_utfviii_error_str
+      {
+        \int_compare:nNnT {\l__bntex_utfviii_left_int} > {0}
+          {\__bntex_utfviii_bad:n {truncated}}
+      }
+    % Failure is atomic: no partially decoded scalar sequence is published.
+    \str_if_empty:NF \l_bntex_utfviii_error_str {\__bntex_utfviii_clear_decoded:}
+  }
+
+% Literal API: do NOT expand input macros. High-byte active tokens created by
+% LaTeX's UTF-8 input layer are data here; active ASCII and TeX syntax are not.
+\prg_new_protected_conditional:Npnn \bntex_utfviii_decode:n #1 {T,F,TF}
+  {
+    \__bntex_utfviii_reset:
+    \int_compare:nNnTF {\str_count:n {#1}} > {\c_bntex_utfviii_max_bytes_int}
+      {\__bntex_utfviii_fail:nnn {input-too-long}{-1}{-1}}
+      {
+        \tl_analysis_map_inline:nn {#1}
+          {
+            \str_if_empty:NT \l_bntex_utfviii_error_str
+              {
+                \bool_lazy_or:nnTF
+                  {\int_compare_p:nNn {"##3} > {9} &&
+                   \int_compare_p:nNn {"##3} < {13}}
+                  {\int_compare_p:nNn {"##3} = {13} &&
+                   \int_compare_p:nNn {##2} > {127}}
+                  {\__bntex_utfviii_push_byte:n {##2}}
+                  {
+                    \__bntex_utfviii_fail:nnn {non-literal}
+                      {\seq_count:N \l_bntex_utfviii_bytes_seq}
+                      {\seq_count:N \l_bntex_utfviii_bytes_seq}
+                  }
+              }
+          }
+      }
+    \str_if_empty:NTF \l_bntex_utfviii_error_str
+      {\__bntex_utfviii_run:}
+      {
+        \seq_clear:N \l_bntex_utfviii_bytes_seq
+        \tl_clear:N \l_bntex_utfviii_hex_tl
+      }
+    \str_if_empty:NTF \l_bntex_utfviii_error_str
+      {\prg_return_true:}{\prg_return_false:}
+  }
+
+% Hex transport bypasses TeX source tokenization for arbitrary bytes, including
+% NUL and malformed UTF-8. Only an even-length ASCII hex string is accepted.
+\prg_new_protected_conditional:Npnn \bntex_utfviii_decode_hex:n #1 {T,F,TF}
+  {
+    \__bntex_utfviii_reset:
+    \int_set:Nn \l__bntex_utfviii_nibble_int {-1}
+    \int_zero:N \l__bntex_utfviii_hex_at_int
+    \int_compare:nNnTF {\str_count:n {#1}} > {2*\c_bntex_utfviii_max_bytes_int}
+      {\__bntex_utfviii_fail:nnn {input-too-long}{-1}{-1}}
+      {
+        \str_map_inline:nn {#1}
+          {
+            \str_if_empty:NT \l_bntex_utfviii_error_str
+              {
+                \int_set:Nn \l__bntex_utfviii_char_int {`##1}
+                \int_set:Nn \l__bntex_utfviii_digit_int {-1}
+                \int_compare:nT {48 <= \l__bntex_utfviii_char_int <= 57}
+                  {\int_set:Nn \l__bntex_utfviii_digit_int {\l__bntex_utfviii_char_int-48}}
+                \int_compare:nT {65 <= \l__bntex_utfviii_char_int <= 70}
+                  {\int_set:Nn \l__bntex_utfviii_digit_int {\l__bntex_utfviii_char_int-55}}
+                \int_compare:nT {97 <= \l__bntex_utfviii_char_int <= 102}
+                  {\int_set:Nn \l__bntex_utfviii_digit_int {\l__bntex_utfviii_char_int-87}}
+                \int_compare:nNnTF {\l__bntex_utfviii_digit_int} < {0}
+                  {\__bntex_utfviii_hex_error:}
+                  {
+                    \int_compare:nNnTF {\l__bntex_utfviii_nibble_int} < {0}
+                      {\int_set_eq:NN \l__bntex_utfviii_nibble_int \l__bntex_utfviii_digit_int}
+                      {
+                        \__bntex_utfviii_push_byte:n
+                          {16*\l__bntex_utfviii_nibble_int+\l__bntex_utfviii_digit_int}
+                        \int_set:Nn \l__bntex_utfviii_nibble_int {-1}
+                      }
+                  }
+              }
+            \int_incr:N \l__bntex_utfviii_hex_at_int
+          }
+        \int_compare:nNnT {\l__bntex_utfviii_nibble_int} > {-1}
+          {\__bntex_utfviii_hex_error:}
+      }
+    \str_if_empty:NTF \l_bntex_utfviii_error_str
+      {\__bntex_utfviii_run:}
+      {
+        \seq_clear:N \l_bntex_utfviii_bytes_seq
+        \tl_clear:N \l_bntex_utfviii_hex_tl
+      }
+    \str_if_empty:NTF \l_bntex_utfviii_error_str
+      {\prg_return_true:}{\prg_return_false:}
+  }
+\cs_new_protected:Npn \__bntex_utfviii_hex_error:
+  {
+    \__bntex_utfviii_fail:nnn {hex-syntax}
+      {\int_div_truncate:nn {\l__bntex_utfviii_hex_at_int}{2}}
+      {\int_div_truncate:nn {\l__bntex_utfviii_hex_at_int}{2}}
+  }
+\ExplSyntaxOff
+\endinput

@@ -1,0 +1,28 @@
+\documentclass[11pt]{article}
+\usepackage[margin=28mm]{geometry}
+\usepackage{bntex-utf8}
+\begin{document}
+\section*{BnTeX: native UTF-8 decoder diagnostic}
+This is an encoding test, not Bengali shaping. No Bengali font or word cache is
+loaded. Compile with pdfLaTeX and shell execution disabled.
+
+\BnTeXDecodeUTFviii{ক্ষ}
+  {\typeout{BNTEX-SCALARS: \BnTeXUTFviiiScalars}%
+   \typeout{BNTEX-OFFSETS: \BnTeXUTFviiiOffsets}%
+   \typeout{BNTEX-HEX: \BnTeXUTFviiiHex}%
+   \par\noindent Scalars: \texttt{\BnTeXUTFviiiScalars}\par
+   \noindent Byte offsets: \texttt{\BnTeXUTFviiiOffsets}\par
+   \noindent Original byte hex: \texttt{\BnTeXUTFviiiHex}\par}
+  {\errmessage{Unexpected UTF-8 rejection}}
+
+\medskip
+\BnTeXDecodeUTFviiiHex{41EDA080}
+  {\errmessage{A surrogate encoding was incorrectly accepted}}
+  {\noindent Expected rejection: \texttt{\BnTeXUTFviiiError}\par
+   \noindent Offending byte: \BnTeXUTFviiiErrorOffset;
+   sequence begins at byte \BnTeXUTFviiiErrorStart.\par}
+
+\medskip
+A successful decoder preserves logical Unicode. Font-dependent substitution,
+reordering and glyph positioning are separate, still-pending native-shaper work.
+\end{document}
