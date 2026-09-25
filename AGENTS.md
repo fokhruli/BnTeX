@@ -1,35 +1,46 @@
-# Contributor / coding-agent contract
+# BnTeX contributor and coding-agent contract
 
-Read README.md, docs/ARCHITECTURE.md, docs/NATIVE_SHAPER.md and docs/ROADMAP.md.
+Current main contains both a native fixed-profile shaper and a legacy cached
+backend. Read README.md, docs/NATIVE-TEX.md, docs/NATIVE-INTEGRATION.md,
+docs/NATIVE-DISPATCH-PERFORMANCE.md and docs/RELEASE-READINESS.md first.
+Historical architecture/roadmap snapshots are not a current feature inventory.
 
-Do not claim a TeX-native shaper exists: v0.1 is an offline word cache. Do not
-replace the native-glyph backend with screenshots, SVG paths, or PDF fragments.
-Keep literal UTF-8 input and original logical-order ActualText. Reject unsupported
-inputs and missing words, rather than printing unshaped approximations.
+## Invariants
 
-Font IDs are meaningful only within the exact SHA-256-identified font. Do not
-normalize the original text before generating lookup keys. Do not equate
-HarfBuzz clusters with safe line-break points. Keep all font files out of git.
+- `bntex-native.sty` / `\bnNative` shapes new words in unmodified pdfTeX.
+  Its exporter consumes a pinned font/profile only, never document vocabulary.
+- `bntex.sty` / `\bn` retains the cached HarfBuzz preparation contract.
+- Preserve original Unicode/byte mappings and logical-order ActualText/PDF strings.
+  Do not normalize source keys, remove join controls or infer breakpoints from
+  glyph clusters. Keep glyph output native, not images, paths or PDF fragments.
+- Keep authoritative `tex/latex/bntex/*.sty` and `*.def` identical to the matching
+  `src/bntex/data/` resources. Never rebaseline frozen glyph fixtures to fix tests.
+- One exact regular-upright profile is supported. Automatic wrapper-free routing
+  is deferred under #15 until the pending backlog is completed; do not activate it.
+- Optimize measured work without weakening ordering, filtering, contextual
+  blocking, bounds, failure policies or the unseen-word/no-helper gate.
 
-The authoritative package source is tex/latex/bntex/bntex.sty; update its identical
-wheel-resource copy at src/bntex/data/bntex.sty together (a test enforces equality).
-Run PYTHONPATH=src python -m pytest -q. Integration tests must actually run before
-claiming rendering support. Record skipped tests and untested platforms.
+## Validation and Git workflow
 
-Never publish this repository, change visibility, upload to CTAN/PyPI, or enable
-shell escape without a specific user request. CI must not use secrets on pull
-requests. Do not make network calls while compiling a document.
+Use topic branches from current main and reviewable PRs. Preserve ancestry when
+consolidating stacked work; never force-reset main or silently overwrite user
+changes. Merge only when authorized and after checking current head and CI.
 
-## Experimental native-path addendum (issue #6)
+Run `BNTEX_REQUIRE_INTEGRATION=1 BNTEX_REQUIRE_ORACLE=1 python -m pytest -q`
+in the pinned environment. Record actual full-suite results, skipped tests,
+font/profile identity and the exact source revision. Locally reconstructed
+subsets are not full-repository evidence. Benchmark repeated/distinct vocabulary
+separately; record timeouts, source bytes, page counts, extraction and resources.
 
-The v0.1 cached contract above still applies to `bntex.sty` and `\bn`.
-The separate `bntex-native.sty` / `\bnNative` implementation is now an opt-in,
-fixed-profile native path. Read `docs/NATIVE-TEX.md` and its validation report
-before changing it. Do not claim arbitrary-font or general-script support.
+## Distribution and acceptance
 
-Keep each `bntex-native*.sty` / `.def` source identical to its wheel-resource copy.
-The exporter may consume only a pinned font profile and font, never vocabulary.
-Do not silently regenerate frozen glyph references. A new word must continue to
-compile without a Python process, external shaper, network, or word cache.
-Run `tests/test_native_tex.py` with integration and pinned-reference gates required.
-The optional Linux chroot gate is a trusted capability test, not a security sandbox.
+Keep all font files, generated installations, credentials and build clutter out
+of Git and shared source artifacts. Preserve LICENSE and THIRD-PARTY-NOTICES.md.
+Do not change visibility, publish releases or upload to CTAN/PyPI without separate
+explicit authorization. Do not enable shell escape or network during compilation.
+
+A mechanical packaging pass is not legal review, typography approval, Overleaf
+browser validation or independent second-user reproduction. Leave unperformed
+gates pending. The release preflight must fail closed with `--require-ready`.
+No automation, fabricated reviewer identity or future background work is implied
+by a checklist. Release preparation is allowed; public publication is not.

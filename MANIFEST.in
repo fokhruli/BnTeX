@@ -1,2 +1,11 @@
-include LICENSE README.md
-recursive-include src/bntex/data *.sty
+include LICENSE THIRD-PARTY-NOTICES.md README.md CHANGELOG.md AGENTS.md CONTRIBUTING.md
+recursive-include src/bntex/data *.sty *.def
+recursive-include tex *.sty *.def
+recursive-include docs *.md *.json *.tex
+recursive-include examples *.tex *.json *.bib latexmkrc
+recursive-include tests *.py *.tex
+recursive-include tools *.py *.sh
+recursive-include corpus *.json *.gz *.md
+prune build
+prune dist
+global-exclude *.ttf *.otf *.ttc *.woff *.woff2 *.tfm *.enc *.pl *.map *.pyc

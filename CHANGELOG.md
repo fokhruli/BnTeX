@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — consolidated native development checkpoint
+
+- Consolidate existing corpus, inventory, decoder, independent shaping model,
+  native expl3 engine and document integration into main, preserving history.
+- Add conservative indexed font-rule dispatch and integer dimension scaling;
+  preserve original references, profile identity and fallback scan semantics.
+- Retain optional bounded process-local memoization and declared-text PDF strings.
+- Add a current README/contributor contract, preserve the original roadmap, and
+  distinguish cached/native editing and deferred automatic routing.
+- Add a PDF manual source, complete source-distribution manifest, mechanical
+  preflight tests and a private release dry run. Pending acceptance blocks ready
+  status. No font files, public release, CTAN/PyPI upload or version promotion.
+
 ## 0.1.0a2 — private bootstrap review
 
 - Import the native-glyph cached pdfLaTeX backend and development documentation.

@@ -1,0 +1,201 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=25mm]{geometry}
+\usepackage{booktabs,tabularx,array,fancyhdr,xcolor}
+\usepackage{xurl}
+\usepackage[unicode,hidelinks]{hyperref}
+\usepackage{fancyvrb}
+\DefineVerbatimEnvironment{Code}{Verbatim}{fontsize=\small,frame=single,framesep=6pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textsf{BnTeX / Developer alpha}}
+\fancyhead[R]{\textsf{Private review manual}}
+\fancyfoot[L]{\small Native Bengali with pdfLaTeX}
+\fancyfoot[R]{\thepage}
+\setlength{\headheight}{14pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\hypersetup{pdftitle={BnTeX developer manual},pdfauthor={BnTeX contributors}}
+\begin{document}
+\raggedright
+{\LARGE\bfseries BnTeX developer manual}\par
+{\large Native Bengali in pdfLaTeX}\par
+\textbf{Status: private development alpha.} This is documentation for the
+consolidated implementation and performance patch, not a CTAN release. The
+Python preparer version remains \texttt{0.1.0a2}; individual experimental TeX
+modules have their own version strings. No font files accompany the sources.
+
+\section{Choose the correct workflow}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{43mm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{38mm}@{}}
+\toprule
+Interface & Shaping & When preparation is needed\\
+\midrule
+\path{bntex.sty} / \texttt{\textbackslash bn} & Offline HarfBuzz word preparation & Whenever vocabulary or prepared styles change\\[4pt]
+\path{bntex-native.sty} / \texttt{\textbackslash bnNative} & Native expl3 rules executed by pdfTeX & Once per supported font/package installation; not for new words\\
+\bottomrule
+\end{tabularx}
+
+The native path currently supports one exact static Noto Serif Bengali Regular
+font, medium weight and upright shape. Surrounding Latin text and mathematics
+use normal LaTeX. Automatic Bengali detection without wrappers is deferred.
+Native shape execution has no Python, Lua, network or external-shaper call.
+
+\section{Install the supported font profile once}
+Use a clean checkout, Python 3.10 or later, FontTools and a TeX distribution with
+\texttt{pltotf} and pdfLaTeX. For exact development tests, use the pinned
+FontTools 4.63.0 and HarfBuzz 10.2.0 reference environment. HarfBuzz belongs to
+the cached preparation/test path, not native document execution.
+
+Supply a separately installed font whose SHA-256 is exactly:\par
+{\small\path{32b4aeb731e3819d7a31216c885208a96e402ceeebb30fc39723b99220708fef}}\par
+The supported typed profile hash is:\par
+{\small\path{f6294540099a3b6f622f2cdd9e863050390f75fd0576495d5a2316903f8cfb42}}
+
+\begin{Code}
+python -m pip install -e '.[test]' 'fonttools==4.63.0'
+python -m bntex.native compile \
+  --font /path/to/NotoSerifBengali-Regular.ttf \
+  --out build/native-profile.json
+python -m bntex.tex_export \
+  --profile build/native-profile.json \
+  --font /path/to/NotoSerifBengali-Regular.ttf \
+  --out build/native-installation
+\end{Code}
+All outputs must be new. The exporter takes font rules, not document vocabulary.
+After a package update, create a matching complete installation. Do not replace
+individual files inside an older installation: integrity checks reject mixtures.
+
+\section{Write and compile a document}
+Place the document alongside the generated installation. In this ASCII-only
+manual, the angle-bracket text below is a placeholder: replace it with literal
+Unicode Bengali in the editable source.
+\begin{Code}
+\documentclass[12pt]{article}
+\usepackage{bntex-native}
+\BnTeXNativeLoadProfile{bntex-native-profile.tex}
+\begin{document}
+English text remains in the normal font.
+\par\bnNative{<literal Bengali sentence>}
+\[ x_{t+1}=f(x_t,u_t)+w_t. \]
+\end{document}
+\end{Code}
+Run \texttt{pdflatex -no-shell-escape -halt-on-error main.tex}. Add new Bengali
+words and run the same command again. Multiple ordinary LaTeX passes may still
+be needed for references and contents; these are not Bengali preparation passes.
+Keep LaTeX commands, English words and mathematics outside each literal Bengali
+span. Spaces within the span permit wrapping between word boxes. Intraword
+hyphenation is not implemented; individual spans are limited to 4,096 UTF-8 bytes.
+
+\subsection{Headings, contents and PDF strings}
+Use explicit original-text declarations for moving arguments and metadata:
+\begin{Code}
+\usepackage{bntex-native-integration}
+\usepackage[unicode=true,pdfencoding=unicode]{hyperref}
+\BnTeXNativeDeclareText{intro}{<literal Bengali title>}
+\hypersetup{pdftitle={\BnTeXNativeText{intro}}}
+% In the document:
+\section{\BnTeXNativeRegularText{intro}}
+\end{Code}
+Declarations store original text, not shaped words. Body text does not need a
+declaration. The RegularText command explicitly selects medium upright type;
+it is not synthetic bold support. \verb|\BnTeXNativeText| inherits the current
+supported style. Keys are ASCII identifiers. Raw \verb|\bnNative| in a bookmark
+is outside this declared-text interface.
+
+\subsection{Optional reuse within a compilation}
+Loading \texttt{bntex-native-memo} enables bounded in-memory reuse of successful
+glyph runs. New words still execute the shaper. Reuse writes no persistent word
+file and applies current point size and color when drawing each occurrence.
+\verb|\BnTeXNativeMemoOff| disables and clears it;
+\verb|\BnTeXNativeMemoClear| clears statistics and entries;
+\verb|\BnTeXNativeMemoStats| prints measured counters. Tracing bypasses reuse.
+The limit is 256 entries and 8,192 stored glyphs. Mostly distinct text may not
+benefit from this option.
+
+\section{Project-local installation and Overleaf}
+The explicit multi-file example uses \texttt{examples/native-project/project.json}.
+Stage it with \texttt{python -m bntex.native\_project stage}, supplying
+\texttt{--manifest}, \texttt{--installation} and a new \texttt{--out} directory.
+The \texttt{verify} command distinguishes editable source changes from immutable
+asset drift. The \texttt{pack} command assembles a local upload ZIP containing
+only declared files. This user-owned project includes the user's local font;
+it is different from the font-free source-review archive.
+
+An actual Overleaf user must import the project, select pdfLaTeX, record the
+project's TeX Live version, compile, introduce new Bengali text, and compile
+again without regeneration. Preserve the no-shell configuration. This browser
+acceptance and independent second-user reproduction remain pending. Local and
+GitHub Actions success do not substitute for them.
+
+\section{Validation and performance}
+Run the complete repository suite in the pinned development environment:
+\begin{Code}
+BNTEX_REQUIRE_INTEGRATION=1 BNTEX_REQUIRE_ORACLE=1 \
+  python -m pytest -q
+python tools/native_performance.py \
+  --installation candidate=build/native-installation \
+  --out build/performance --pages 1 10 100 \
+  --modes repeated distinct --memo off \
+  --passes 2 --timeout 90
+\end{Code}
+The benchmark uses 96 synthetic tokens per requested page by default, with
+explicit page breaks. It is not representative book prose. The earlier
+\texttt{native\_benchmark.py} uses a different 200-token workload; do not combine
+those measurements. Record exact source, revision, font and table identities,
+page counts, extraction, timing and resource use. A timed-out run is not a
+completed PDF. Extending a timeout yields completion measurements but does not
+satisfy a tighter interactive budget.
+
+The dispatch patch adds conservative first-glyph indexes and guarded adjacent
+ligature-pair indexes. It preserves lookup order, contextual blocking rules,
+filtering and original Unicode. A legacy scan path permits stage comparisons.
+Frozen reference rows must never be regenerated merely to make tests pass.
+
+\section{Troubleshooting and scope}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{42mm}>{\raggedright\arraybackslash}X@{}}
+\toprule
+Symptom & Action\\\midrule
+Wrong font/profile hash & Obtain the documented exact local font; do not edit hashes to bypass the check.\\[3pt]
+Missing or changed asset & Re-export and move the complete matching installation together.\\[3pt]
+Unsupported bold/italic & Request regular upright explicitly or leave the context unsupported.\\[3pt]
+Literal-input error & Move commands/math outside the Bengali span; inspect byte diagnostics.\\[3pt]
+Slow long document & Measure distinct/repeated workloads separately; optional reuse is not a cure for all new-word throughput.\\[3pt]
+Incorrect PDF string & Use declared-text integration; do not expand the shaping engine inside a bookmark.\\
+\bottomrule
+\end{tabularx}
+
+Individual tests cover article/report/book, tables, footnotes, captions, contents,
+AMS text, one TikZ node, a basic Beamer frame and protected bibliography text.
+They do not certify arbitrary publisher classes, all package combinations,
+Windows/macOS, all PDF viewers, arbitrary fonts, or structural PDF/UA compliance.
+Original-order ActualText extraction and accessible document structure are
+separate concerns. Diagnostic shape, hexadecimal, dump and trace commands are
+developer interfaces, not a stable universal shaping API.
+
+\section{Release preparation is not publication}
+Original code retains the repository LICENSE and third-party adaptation notices.
+No font license is replaced by the compiler, an embedding flag or this manual.
+The exact public font dependency/profile distribution policy still needs review.
+
+\texttt{tools/release\_preflight.py} audits a clean tracked source tree, matching
+TeX/resource copies, required documentation, forbidden assets and basic secret
+patterns. It can create a deterministic private source-review ZIP with this PDF
+and its source. It cannot authenticate review evidence or perform a complete
+security/legal audit. \texttt{--require-ready} fails while any recorded acceptance
+gate is pending or blocked. There is no upload or publication command.
+
+Before a public release, settle browser and second-user evidence, scoped native
+visual review, performance expectations, naming, distribution rights and explicit
+maintainer authorization. A mechanical packaging pass is not a CTAN submission.
+
+\section*{Primary guidance and source of truth}
+Implementation contracts are in \texttt{docs/NATIVE-TEX.md},
+\texttt{docs/NATIVE-INTEGRATION.md} and the revision-specific validation reports.
+The original architecture roadmap is historical, not a current feature list.
+
+CTAN guidance requires readable documentation with source and a complete, clean
+archive: \url{https://ctan.org/help/upload-pkg}. Overleaf documents per-project
+compiler and TeX Live selection in its \href{https://docs.overleaf.com/getting-started/recompiling-your-project/selecting-a-tex-live-version-and-latex-compiler}{compiler and TeX Live settings guide}.
+These external requirements do not certify this package's acceptance.
+\end{document}
