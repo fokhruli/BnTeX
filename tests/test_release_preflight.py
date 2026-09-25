@@ -117,3 +117,12 @@ def test_partial_archive_arguments_rejected(repo,tmp_path):
     out=tmp_path/'report.json'
     assert r.main(['--root',str(repo),'--out',str(out),'--archive',str(tmp_path/'x.zip')])==2
     assert not out.exists()
+
+
+@pytest.mark.parametrize('evidence',['   ','\t\n','\u2003'])
+def test_whitespace_only_passed_evidence_rejected(evidence):
+    data=gate_data()
+    for gate in data['gates']:
+        gate.update(status='passed',evidence=evidence)
+    with pytest.raises(ValueError,match='passed gate needs evidence'):
+        r.readiness(json.dumps(data).encode())
