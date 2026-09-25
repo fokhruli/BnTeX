@@ -1,0 +1,62 @@
+name: private-release-dry-run
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  source-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install mechanical-review tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-extra texlive-fonts-recommended lmodern
+          python -m pip install build pytest
+      - name: Test release preflight failure paths
+        run: python -m pytest -q tests/test_release_preflight.py
+      - name: Build source and wheel distributions locally only
+        run: python -m build
+      - name: Check distribution resources and notices
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import tarfile, zipfile
+          forbidden={'.ttf','.otf','.ttc','.woff','.woff2','.tfm','.enc','.pl','.map','.key','.pem'}
+          wheel=next(Path('dist').glob('*.whl'))
+          with zipfile.ZipFile(wheel) as z:
+              assert not any(Path(n).suffix.lower() in forbidden for n in z.namelist())
+              for p in Path('tex/latex/bntex').iterdir():
+                  if p.suffix in {'.sty','.def'}:
+                      assert z.read('bntex/data/'+p.name)==p.read_bytes(), p.name
+              assert any(n.endswith('/THIRD-PARTY-NOTICES.md') for n in z.namelist())
+          sdist=next(Path('dist').glob('*.tar.gz'))
+          with tarfile.open(sdist) as t:
+              names=t.getnames(); prefix=names[0].split('/')[0]+'/'
+              assert not any(Path(n).suffix.lower() in forbidden for n in names)
+              for p in ['LICENSE','THIRD-PARTY-NOTICES.md','docs/manual/bntex-manual.tex',
+                        'tex/latex/bntex/bntex-native-core.def','tests/test_native_performance.py']:
+                  assert prefix+p in names, p
+          print('Wheel resource identity, source completeness and font-file exclusions passed.')
+          PY
+      - name: Compile readable manual and create private review archive
+        run: |
+          mkdir -p build/manual
+          pdflatex -no-shell-escape -halt-on-error -interaction=nonstopmode -output-directory=build/manual docs/manual/bntex-manual.tex
+          pdflatex -no-shell-escape -halt-on-error -interaction=nonstopmode -output-directory=build/manual docs/manual/bntex-manual.tex
+          python tools/release_preflight.py --out build/source-review.json --manual-pdf build/manual/bntex-manual.pdf --archive build/bntex-source-review.zip
+      - name: Verify outstanding acceptance blocks publication
+        run: |
+          set +e
+          python tools/release_preflight.py --out build/readiness.json --require-ready
+          status=$?
+          set -e
+          test "$status" -eq 1
+          echo 'Pending human/browser/performance/distribution gates correctly block readiness.'
+# No release/upload action and no artifact publication. This creates local review
+# files only. A successful dry-run is not a public release or browser acceptance.

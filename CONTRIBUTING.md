@@ -1,33 +1,27 @@
 # Contributing to BnTeX
 
-Development home: `fokhruli/BnTeX` (private). Use topic branches and pull requests;
-do not push development changes directly to main. Do not change visibility,
-create releases or upload to CTAN/PyPI as part of ordinary development.
+Use a branch based on current main and a PR with an exact supported scope.
+Read AGENTS.md and the current README before historical design snapshots.
 
-Read AGENTS.md, docs/ARCHITECTURE.md, docs/NATIVE_SHAPER.md and docs/PROFILE_AUDIT.md.
-Install dependencies from README, then run:
+Required native correctness checks use the documented pinned environment:
 
-```bash
-BNTEX_REQUIRE_INTEGRATION=1 PYTHONPATH=src python -m pytest -q
-PYTHONPATH=src python tools/compare_reference.py --font /path/to/static-bengali.ttf
+```
+BNTEX_REQUIRE_INTEGRATION=1 BNTEX_REQUIRE_ORACLE=1 python -m pytest -q
 python tools/audit_release.py
 ```
 
-A missing font/TeX prerequisite must fail the release gate, not silently skip the
-rendering checks. Keep tests small and deterministic. Record actual tool versions,
-font hashes and executed results; a CI definition is not a passing CI run.
+Retain original Unicode, fixed font identity and frozen glyph runs. Every TeX
+source/resource pair must stay identical. A skipped integration/reference test
+is not passing typography evidence. Record complete CI separately from local
+subsets. Keep benchmark input/budget identities and failures visible.
 
-## Review checklist
+The cached frontend remains literal, not a general TeX parser. The native
+frontend also rejects input macros and unsupported styles. Automatic Bengali
+routing is deferred under #15. Check headings/PDF strings, scope restoration,
+word boundaries and original text extraction whenever rendering is changed.
 
-Add a failing regression test before fixing a bug. Preserve original Unicode,
-font identity and text extraction. Keep both copies of bntex.sty identical. Never
-commit font binaries, generated word caches, credentials or local build trees.
-Do not claim native shaping from cached HarfBuzz output or structural font audits.
-
-SourceError columns are 1-based Unicode scalar counts in decoded source, not byte
-offsets or visual glyph positions. A caret is approximate for combining scripts.
-The scanner remains deliberately literal; it is not a general TeX parser.
-
-The next priority is a pinned, native-speaker-reviewed corpus (#3), followed by
-the typed font-profile IR and Python shaping model (#5). The UTF-8 front end (#4)
-can be developed independently. The final unseen-word gate belongs to #6.
+No font binaries, generated installation files, credentials or build trees may
+be committed. Keep the original and third-party licenses intact. Public releases,
+visibility changes and CTAN/PyPI uploads require separate authorization.
+`docs/RELEASE-READINESS.json` records outstanding human/browser/performance and
+distribution decisions; do not fill them in on another person's behalf.
