@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "repository": "fokhruli/BnTeX",
-  "based_on_main": "2d30db0ae94d3f8eab29e5181967ca77827993f1",
+  "based_on_main": "cd84a789b54a383aee71ee5b7a2a7361620fb9a9",
   "branches": [
     {"name":"chore/release-readiness","sha":"2c4770b83def255c52f4e717f2592033c03f45b5"},
     {"name":"copilot/review-branch","sha":"ba9390d5830c187d1de94279930af9d308212463"},
@@ -14,6 +14,7 @@
     {"name":"feat/native-performance","sha":"218e3fb93e394febf7281a030a454ec6d2f7eea4"},
     {"name":"feat/native-tex-shaper","sha":"efb9ed4189053ea919a18872bee261540aadebf8"},
     {"name":"feat/pdftex-utf8","sha":"ba9390d5830c187d1de94279930af9d308212463"},
-    {"name":"feat/user-inventory-mining","sha":"8d910d311792629638ef072a99a60ba6b7684d8c"}
+    {"name":"feat/user-inventory-mining","sha":"8d910d311792629638ef072a99a60ba6b7684d8c"},
+    {"name":"chore/merged-branch-cleanup","sha":"b7d0c1021f37606d5f474732e7def6765b3aa4c5"}
   ]
 }

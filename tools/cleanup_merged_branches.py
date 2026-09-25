@@ -87,7 +87,7 @@ class GitHubRead:
         self.token = token
 
     def get(self, suffix):
-        req = urllib.request.Request(f'https://api.github.com/repos/{REPOSITORY}/{suffix}',
+        req = urllib.request.Request(f'https://api.github.com/repos/{REPOSITORY}'+('/'+suffix if suffix else ''),
               headers={'Authorization':f'Bearer {self.token}', 'Accept':'application/vnd.github+json',
                        'X-GitHub-Api-Version':'2022-11-28'})
         with urllib.request.urlopen(req, timeout=30) as response:
@@ -99,7 +99,8 @@ class GitHubRead:
     def pages(self, endpoint):
         result = []
         for page in range(1, 21):
-            chunk = self.get(f'{endpoint}&per_page=100&page={page}')
+            separator = '&' if '?' in endpoint else '?'
+            chunk = self.get(f'{endpoint}{separator}per_page=100&page={page}')
             if not isinstance(chunk, list):
                 raise ValueError('invalid API collection')
             result.extend(chunk)
@@ -111,7 +112,7 @@ class GitHubRead:
         repo = self.get('')
         if repo.get('full_name') != REPOSITORY or repo.get('default_branch') != 'main' or repo.get('private') is not True:
             raise ValueError('repository/default/privacy guard failed')
-        rows = self.pages('branches?')
+        rows = self.pages('branches')
         branches = {b['name']: {'sha': b['commit']['sha'], 'protected':b['protected']} for b in rows}
         return branches, self.pages('pulls?state=open')
 
