@@ -81,21 +81,68 @@
       \int_add:Nn\l__bn_a_int{\__bn_get:nn{##1}{ax}}}
     \hss\pdfliteral direct{EMC}}
   \box_set_ht:Nn\l__bn_word_box{\l__bn_height_dim}\box_set_dp:Nn\l__bn_word_box{\l__bn_depth_dim}\box_use_drop:N\l__bn_word_box\group_end:}
+% Internal span transport. Public shape/hex APIs retain their complete decoder.
+% The strict decoder writes word records during its single validation pass.
+% Nothing is shaped/rendered until that entire pass succeeds. Record names are
+% locally assigned, reused between calls and bounded by at most 2048 words.
+\seq_new:N\l__bn_span_words_seq
+\tl_new:N\l__bn_span_word_tl
+\int_new:N\l__bn_span_at_int
+\int_new:N\l__bn_span_count_int
+\bool_new:N\l__bn_word_decoded_bool
+\cs_new_eq:NN\__bn_span_saved_emit:\__bntex_utfviii_emit:
+\cs_new_protected:Npn\__bn_shape_word:n #1
+ {\bool_if:NTF\l__bn_word_decoded_bool
+   {\__bn_execute:}{\BnTeXNativeShape{#1}}}
 \cs_new_protected:Npn\__bn_typeset_word:n #1
- {\BnTeXNativeShape{#1}\__bn_render:}
+ {\__bn_shape_word:n{#1}\__bn_render:}
+\cs_new_protected:Npn\__bn_span_save:
+ {\seq_if_empty:NF\l_bntex_utfviii_scalars_seq
+   {\int_incr:N\l__bn_span_count_int
+    \int_compare:nNnT{\l__bn_span_count_int}>{2048}{\__bn_fail:n{decoded~word~record~limit}}
+    \seq_set_eq:cN{l__bn_span_\int_use:N\l__bn_span_count_int _scalars_seq}\l_bntex_utfviii_scalars_seq
+    \seq_set_eq:cN{l__bn_span_\int_use:N\l__bn_span_count_int _offsets_seq}\l_bntex_utfviii_offsets_seq
+    \seq_set_eq:cN{l__bn_span_\int_use:N\l__bn_span_count_int _lengths_seq}\l_bntex_utfviii_lengths_seq
+    \seq_clear:N\l_bntex_utfviii_scalars_seq
+    \seq_clear:N\l_bntex_utfviii_offsets_seq
+    \seq_clear:N\l_bntex_utfviii_lengths_seq
+    \int_zero:N\l__bn_span_at_int}}
+% The same UTF-8 state machine calls this instead of its ordinary scalar sink.
+% Only validated scalars reach it; SPACE alone is the existing word delimiter.
+\cs_new_protected:Npn\__bn_span_collect:
+ {\int_compare:nNnTF{\l__bntex_utfviii_value_int}={32}{\__bn_span_save:}
+   {\seq_put_right:Nx\l_bntex_utfviii_scalars_seq{\int_use:N\l__bntex_utfviii_value_int}
+    \seq_put_right:Nx\l_bntex_utfviii_offsets_seq{\int_use:N\l__bn_span_at_int}
+    \seq_put_right:Nx\l_bntex_utfviii_lengths_seq{\int_use:N\l__bntex_utfviii_width_int}
+    \int_add:Nn\l__bn_span_at_int{\l__bntex_utfviii_width_int}}}
 \NewDocumentCommand\bnNative{+m}
  {\group_begin:
   \mode_if_math:T{\__bn_fail:n{use~native~Bengali~in~text~mode}}
   \str_if_eq:eeF{\f@series}{m}{\__bn_fail:n{only~regular~weight~is~implemented;~use~mdseries~explicitly}}
   \str_if_eq:eeF{\f@shape}{n}{\__bn_fail:n{only~upright~shape~is~implemented}}
-  % Validate tokens before string conversion. No input macros are expanded.
+  \int_zero:N\l__bn_span_at_int\int_zero:N\l__bn_span_count_int
+  \cs_set_eq:NN\__bn_span_saved_emit:\__bntex_utfviii_emit:
+  \cs_set_eq:NN\__bntex_utfviii_emit:\__bn_span_collect:
+  % Validate ORIGINAL tokens and the entire UTF-8 span before any rendering.
   \bntex_utfviii_decode:nTF{#1}{}{\__bn_fail:n{literal~UTF-8~input~required}}
-  \tl_set:Nx\l__bn_a_tl{\tl_to_str:n{#1}}\seq_set_split:NnV\l__bn_f_seq{~}\l__bn_a_tl
-  \bool_set_true:N\l__bn_f_bool\mode_leave_vertical:
-  \seq_map_inline:Nn\l__bn_f_seq
-   {\tl_if_empty:nF{##1}
-     {\bool_if:NF\l__bn_f_bool{\hskip.25em~plus.12em~minus.08em\relax}\bool_set_false:N\l__bn_f_bool
-      \__bn_typeset_word:n{##1}}}
+  \cs_set_eq:NN\__bntex_utfviii_emit:\__bn_span_saved_emit:
+  \__bn_span_save:
+  \tl_set:Nx\l__bn_span_word_tl{\tl_to_str:n{#1}}
+  \seq_set_split:NnV\l__bn_span_words_seq{~}\l__bn_span_word_tl
+  \seq_remove_all:Nn\l__bn_span_words_seq{}
+  \int_compare:nNnF{\seq_count:N\l__bn_span_words_seq}={\l__bn_span_count_int}
+   {\__bn_fail:n{decoded~word~boundary~mismatch}}
+  \mode_leave_vertical:
+  \seq_map_indexed_inline:Nn\l__bn_span_words_seq
+   {\int_compare:nNnT{##1}>{1}{\hskip.25em~plus.12em~minus.08em\relax}
+    \group_begin:
+    \seq_set_eq:Nc\l_bntex_utfviii_scalars_seq{l__bn_span_##1_scalars_seq}
+    \seq_set_eq:Nc\l_bntex_utfviii_offsets_seq{l__bn_span_##1_offsets_seq}
+    \seq_set_eq:Nc\l_bntex_utfviii_lengths_seq{l__bn_span_##1_lengths_seq}
+    \tl_set:Nx\l_bntex_utfviii_hex_tl{\pdfescapehex{\detokenize{##2}}}
+    \bool_set_true:N\l__bn_word_decoded_bool
+    \__bn_typeset_word:n{##2}
+    \group_end:}
   \group_end:}
 \ExplSyntaxOff
 \endinput

@@ -3,7 +3,7 @@
 \NeedsTeXFormat{LaTeX2e}[2022-06-01]
 \RequirePackage{bntex-native}
 \ProvidesExplPackage{bntex-native-memo}{2026-09-24}{0.1.0}{Bounded native glyph-run memoization}
-\cs_if_exist:NF \__bn_typeset_word:n {\__bn_fail:n{matching~native~word~hook~is~required}}
+\cs_if_exist:NF \__bn_shape_word:n {\__bn_fail:n{matching~native~decoded-word~hook~is~required}}
 \prop_new:N \g__bnm_runs_prop
 \tl_new:N \l__bnm_key_tl
 \tl_new:N \l__bnm_run_tl
@@ -59,9 +59,9 @@
      \tl_set:Nx\l__bnm_key_tl{\pdfescapehex{\detokenize{#1}}}
      \prop_get:NVNTF\g__bnm_runs_prop\l__bnm_key_tl\l__bnm_run_tl
        {\int_gincr:N\g__bnm_hits_int\tl_use:N\l__bnm_run_tl}
-       {\int_gincr:N\g__bnm_misses_int\BnTeXNativeShape{#1}\__bnm_store:}
+       {\int_gincr:N\g__bnm_misses_int\__bn_shape_word:n{#1}\__bnm_store:}
      \__bn_render:\group_end:}
-    {\BnTeXNativeShape{#1}\__bn_render:}}
+    {\__bn_shape_word:n{#1}\__bn_render:}}
 \cs_set_eq:NN\__bn_typeset_word:n\__bnm_word:n
 \ExplSyntaxOff
 \endinput
