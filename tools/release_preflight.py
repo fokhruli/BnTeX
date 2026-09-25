@@ -58,7 +58,7 @@ def readiness(raw: bytes) -> dict:
             raise ValueError('gate detail required')
         if gate['evidence'] is not None and not isinstance(gate['evidence'],str):
             raise ValueError('invalid gate evidence')
-        if gate['status'] == 'passed' and not gate['evidence']:
+        if gate['status'] == 'passed' and (not gate['evidence'] or not gate['evidence'].strip()):
             raise ValueError('passed gate needs evidence, not an empty claim')
         if gate['status'] != 'passed': blockers.append(key)
     if seen != GATES: raise ValueError('missing required gate')
