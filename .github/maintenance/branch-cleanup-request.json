@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "repository": "fokhruli/BnTeX",
+  "based_on_main": "2d30db0ae94d3f8eab29e5181967ca77827993f1",
+  "branches": [
+    {"name":"chore/release-readiness","sha":"2c4770b83def255c52f4e717f2592033c03f45b5"},
+    {"name":"copilot/review-branch","sha":"ba9390d5830c187d1de94279930af9d308212463"},
+    {"name":"feat/bootstrap-profile-audit","sha":"ea57238461545cb75d00abcb6c7e52430b9be20c"},
+    {"name":"feat/corpus-oracle","sha":"077c98d149b365011bff9d87578bb63c886fb92a"},
+    {"name":"feat/fixed-font-model","sha":"1098050b2f9cab54e750efd18de34ad44f171f81"},
+    {"name":"feat/native-decode-once","sha":"6a3ae3e52c743dfd24c8472d777b0214e8615736"},
+    {"name":"feat/native-first-use-throughput","sha":"e8e4ff6b98e65198e86b4471532a2c083102de6a"},
+    {"name":"feat/native-integration-baseline","sha":"4c81a083a162c9ace7680465b3f456f036bf1e87"},
+    {"name":"feat/native-performance","sha":"218e3fb93e394febf7281a030a454ec6d2f7eea4"},
+    {"name":"feat/native-tex-shaper","sha":"efb9ed4189053ea919a18872bee261540aadebf8"},
+    {"name":"feat/pdftex-utf8","sha":"ba9390d5830c187d1de94279930af9d308212463"},
+    {"name":"feat/user-inventory-mining","sha":"8d910d311792629638ef072a99a60ba6b7684d8c"}
+  ]
+}

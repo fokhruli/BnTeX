@@ -1,0 +1,29 @@
+name: requested-merged-branch-cleanup
+on:
+  push:
+    branches: [main]
+    paths: ['.github/maintenance/branch-cleanup-request.json']
+permissions:
+  contents: read
+concurrency:
+  group: bntex-requested-branch-cleanup
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: github.repository == 'fokhruli/BnTeX' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Apply only the reviewed, exact-tip cleanup request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python tools/cleanup_merged_branches.py
+          --request .github/maintenance/branch-cleanup-request.json
+          --out "$RUNNER_TEMP/branch-cleanup-result.json" --apply
