@@ -41,7 +41,7 @@
   \bool_if:NT\g__bn_busy_bool{\__bn_fail:n{nested~native~shaping~is~unsupported}}
   \bool_gset_true:N\g__bn_busy_bool
   \int_compare:nNnT{\seq_count:N\l_bntex_utfviii_scalars_seq}={0}{\__bn_fail:n{empty~run}}
-  \int_gzero:N\g__bn_count_int\int_gzero:N\g__bn_allocated_int\int_gzero:N\g__bn_ops_int
+  \__bn_activity_reset:\int_gzero:N\g__bn_count_int\int_gzero:N\g__bn_allocated_int\int_gzero:N\g__bn_ops_int
   \int_gzero:N\g__bn_depth_int\int_gzero:N\g__bn_trace_cells_int\int_gset:Nn\g__bn_ligid_int{1}\prop_gclear:N\g__bn_kinds_prop
   \tl_gset_eq:NN\g__bn_original_hex_tl\l_bntex_utfviii_hex_tl\tl_gclear:N\g__bn_utf_sixteen_tl
   \seq_map_inline:Nn\l_bntex_utfviii_scalars_seq

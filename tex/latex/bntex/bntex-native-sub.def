@@ -220,12 +220,14 @@
  {\use:e{\exp_not:N\__bn_gsub_run_args:nnnn{\int_eval:n{#1}}{\int_eval:n{#2}}{\int_eval:n{#3}}{\int_eval:n{#4}}}}
 \cs_new_protected:Npn \__bn_gsub_run_args:nnnn #1#2#3#4
  {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_b_int{#2}\int_set:Nn\l__bn_c_int{#3}\int_set:Nn\l__bn_d_int{#4}\int_zero:N\l__bn_e_int
-  \int_while_do:nn{\l__bn_e_int<\g__bn_count_int}
+  \__bn_lookup_active:nnTF{s}{\l__bn_a_int}
+   {\int_while_do:nn{\l__bn_e_int<\g__bn_count_int}
    {\__bn_gsub_may_start:nnnTF{\l__bn_a_int}{\l__bn_e_int}{\l__bn_c_int}
      {\__bn_apply_sub:nnnnn{\l__bn_a_int}{\l__bn_e_int}{\l__bn_b_int}{\l__bn_c_int}{\l__bn_d_int}
       \int_set_eq:NN\l__bn_e_int\g__bn_next_int}
      {\__bn_tick:\bool_gset_false:N\g__bn_success_bool
-      \int_incr:N\l__bn_e_int\int_gset_eq:NN\g__bn_next_int\l__bn_e_int}}
+      \int_incr:N\l__bn_e_int\int_gset_eq:NN\g__bn_next_int\l__bn_e_int}}}
+   {\__bn_skip_pass:n{s}}
   \__bn_snapshot:n{GSUB-\int_use:N\l__bn_a_int}\group_end:}
 \ExplSyntaxOff
 \endinput

@@ -207,7 +207,7 @@ def test_benchmark_timeout_not_counted_as_completed_pdf(native_install,tmp_path)
 
 def test_legacy_table_bytes_are_unchanged_after_removing_indexes(tex_profile):
     raw=emit_tables(json.loads(tex_profile.read_text()))
-    indexed=re.compile(rb"\\cs_gset:cpn \{__bnp_(?:dispatch_abi|[sp]_\d+_at_\d+|s_\d+_pair_(?:mode|\d+_\d+)|t_\d+_rules_(?:at_\d+|pair_\d+_\d+))\}")
+    indexed=re.compile(rb"\\cs_gset:cpn \{__bnp_(?:dispatch_abi|activity_abi|activate_\d+|[sp]_\d+_at_\d+|s_\d+_pair_(?:mode|\d+_\d+)|t_\d+_rules_(?:at_\d+|pair_\d+_\d+))\}")
     legacy=b''.join(line for line in raw.splitlines(keepends=True) if not indexed.match(line))
     # Verified parent installation table identity, not a freshly regenerated oracle.
     assert hashlib.sha256(legacy).hexdigest()=='7fd73a9d0d21b99c4d2580f209ec0c1cc8bf15d72c8eb444522b38898577cd4a'

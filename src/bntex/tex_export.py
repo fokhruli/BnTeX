@@ -238,6 +238,19 @@ def emit_tables(p:dict)->bytes:
         for n in range(128):put(f'mask_{mask}_{n}',int(mask==0 or bool(mask&n)))
     put('dispatch_abi', 1)
     put('gpos_roots',sorted({i for f in p['gpos_features'] for i in f['lookups']}))
+    # Monotone per-run lookup activation. Mark every lookup that could start
+    # at an observed glyph, including zero-action blockers. No vocabulary input.
+    put('activity_abi', 1)
+    for g in range(p['glyph_count']):
+        actions = []
+        for table, letter in [('gsub', 's'), ('gpos', 'p')]:
+            for lookup in p[table]:
+                if lookup['index'] >= 128:
+                    raise ValueError('lookup exceeds native activity table bounds')
+                if any(g in entry_glyphs(sub) for sub in lookup['subtables']):
+                    actions.append(r'\cs_gset_eq:cN{__bn_active_' + letter + '_' +
+                        str(lookup['index']) + r'}\g__bn_activity_stamp_tl')
+        lines.append(r'\cs_gset:cpn {__bnp_activate_' + str(g) + '}{' + ''.join(actions) + '}')
     lines += [r'\ExplSyntaxOff',r'\endinput']
     return ('\n'.join(lines)+'\n').encode('ascii')
 

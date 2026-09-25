@@ -2,7 +2,7 @@
 \ProvidesExplFile{bntex-native-reorder.def}{2026-09-24}{0.1.0}{Native Bengali reordering}
 \cs_new_protected:Npn \__bn_initial_range:nn #1#2
  {\use:e{\exp_not:N\__bn_initial_range_args:nn{\int_eval:n{#1}}{\int_eval:n{#2}}}}
-\cs_new_protected:Npn \__bn_initial_range_args:nn #1#2
+\cs_new_protected:Npn \__bn_initial_range_dense:nn #1#2
  {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_b_int{#2}
   \int_set_eq:NN\l__bn_c_int\l__bn_b_int\int_set_eq:NN\l__bn_d_int\l__bn_a_int
   \bool_set_false:N\l__bn_a_bool
@@ -72,6 +72,31 @@
          {\__bn_delmask:nn{\l__bn_e_int}{16}\__bn_cat:nnT{\l__bn_e_int}{1,2,3,10,11}{\bool_set_false:N\l__bn_c_bool}\int_decr:N\l__bn_e_int}}}
     \__bn_snapshot:n{initial-reorder}}
   \group_end:}
+
+% Closed trivial syllables: no ligation, zero incoming masks, one base and at
+% most one attached mark. All other structures retain the full algorithm.
+\cs_new_protected:Npn\__bn_initial_range_args:nn #1#2
+ {\group_begin:\bool_set_false:N\l__bn_f_bool
+  \int_case:nn{#2-#1}
+   {{1}{\bool_if:nT{\__bn_cat_p:nn{#1}{1,2,3,10,11} &&
+                     \int_compare_p:n{\__bn_get:nn{#1}{lig}=0} &&
+                     \int_compare_p:n{\__bn_get:nn{#1}{mask}=0}}
+          {\int_compare:nNnF{\prop_item:Ne\g__bn_kinds_prop{\__bn_get:nn{#1}{syl}}}={5}
+            {\__bn_set:nnn{#1}{pos}{4}\__bn_snapshot:n{initial-reorder}\bool_set_true:N\l__bn_f_bool}}}
+    {2}{\bool_if:nT{\__bn_cat_p:nn{#1}{1,2,3,10,11} &&
+                     \__bn_cat_p:nn{#1+1}{4,5,8,9} &&
+                     \int_compare_p:n{\__bn_get:nn{#1}{lig}=0} &&
+                     \int_compare_p:n{\__bn_get:nn{#1+1}{lig}=0} &&
+                     \int_compare_p:n{\__bn_get:nn{#1}{mask}=0} &&
+                     \int_compare_p:n{\__bn_get:nn{#1+1}{mask}=0} &&
+                     \int_compare_p:n{\__bn_get:nn{#1}{cl}=\__bn_get:nn{#1+1}{cl}}}
+          {\__bn_set:nnn{#1}{pos}{4}
+           \__bn_cat:nnT{#1+1}{4,5}{\__bn_set:nnn{#1+1}{pos}{4}}
+           \int_compare:nNnTF{\__bn_get:nn{#1+1}{pos}}={2}
+             {\__bn_set:nnn{#1+1}{mask}{20}\__bn_move:nn{#1+1}{#1}}
+             {\__bn_set:nnn{#1+1}{mask}{44}}
+           \__bn_snapshot:n{initial-reorder}\bool_set_true:N\l__bn_f_bool}}}
+  \bool_if:NF\l__bn_f_bool{\__bn_initial_range_dense:nn{#1}{#2}}\group_end:}
 \cs_new_protected:Npn \__bn_initial:
  {\group_begin:
   \int_step_inline:nnnn{0}{1}{\g__bn_count_int-1}
@@ -85,7 +110,7 @@
   \group_end:}
 \cs_new_protected:Npn \__bn_final_range:nn #1#2
  {\use:e{\exp_not:N\__bn_final_range_args:nn{\int_eval:n{#1}}{\int_eval:n{#2}}}}
-\cs_new_protected:Npn \__bn_final_range_args:nn #1#2
+\cs_new_protected:Npn \__bn_final_range_dense:nn #1#2
  {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_b_int{#2}
   \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_b_int-1}
    {\bool_if:nT{\int_compare_p:n{\__bn_get:nn{##1}{gid}=\__bn_tab:n{cp_2509_g}} && \int_compare_p:n{\__bn_get:nn{##1}{lig}=1} && \int_compare_p:n{\__bn_get:nn{##1}{mult}=1}}
@@ -135,6 +160,14 @@
    {\int_compare:nNnTF{\l__bn_a_int}={0}{\__bn_addmask:nn{\l__bn_a_int}{64}}
      {\__bn_cat:nnTF{\l__bn_a_int-1}{10,11,12}{\__bn_addmask:nn{\l__bn_a_int}{64}}{\__bn_unsafe:nn{\l__bn_a_int-1}{\l__bn_a_int+1}}}}
   \__bn_snapshot:n{final-reorder}\group_end:}
+
+\cs_new_protected:Npn\__bn_final_range_args:nn #1#2
+ {\int_compare:nNnTF{#2-#1}={1}
+   {\bool_if:nTF{\int_compare_p:n{\__bn_get:nn{#1}{pos}=4} &&
+                 \int_compare_p:n{\__bn_get:nn{#1}{lig}=0}}
+     {\__bn_snapshot:n{final-reorder}}
+     {\__bn_final_range_dense:nn{#1}{#2}}}
+   {\__bn_final_range_dense:nn{#1}{#2}}}
 \cs_new_protected:Npn \__bn_final:
  {\group_begin:\int_zero:N\l__bn_a_int
   \int_while_do:nn{\l__bn_a_int<\g__bn_count_int}
