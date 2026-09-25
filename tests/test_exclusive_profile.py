@@ -84,7 +84,7 @@ def test_observer_does_not_change_complete_traces(native_install,words):
     assert [l for l in a.splitlines() if l.startswith(prefixes)]==[l for l in b.splitlines() if l.startswith(prefixes)]
     assert p.parse(b)['phases']['execute_other']['calls']==len(words)
 
-@pytest.mark.parametrize('kind',['distinct','digits-free','prose'])
+@pytest.mark.parametrize('kind',['distinct','repeated','digits-free','prose'])
 def test_fixed_fixture_compile_and_drawings(native_install,tmp_path,kind):
     report=p.run(native_install,tmp_path/'report',kind=kind,repetitions=1,detail=True)
     assert report['all_drawings_equal']
@@ -99,6 +99,7 @@ def test_fixed_fixture_compile_and_drawings(native_install,tmp_path,kind):
 def test_rejects_invalid_fixture_and_repetitions(tmp_path):
     with pytest.raises(ValueError):p.instrument_source('not a document')
     with pytest.raises(ValueError):p.run(tmp_path,tmp_path/'new',repetitions=True)
+    with pytest.raises(ValueError):p.run(tmp_path,tmp_path/'new',memo='on')
     tmp_path.joinpath('exists').mkdir()
     with pytest.raises(ValueError):p.run(tmp_path,tmp_path/'exists')
 
@@ -125,3 +126,17 @@ def test_font_position_and_actualtext_changes_detected(tmp_path,change):
     a,b=tmp_path/'a.pdf',tmp_path/'b.pdf'
     small_pdf(a);small_pdf(b,**change)
     assert p.drawing_identity(a)!=p.drawing_identity(b)
+
+
+def test_repeated_vocabulary_memo_is_separate(native_install,tmp_path):
+    report=p.run(native_install,tmp_path/'memo',kind='repeated',repetitions=1,detail=True,memo=True)
+    assert report['fixture']['memo_enabled'] is True
+    assert report['fixture']['token_occurrences']==96
+    assert report['fixture']['distinct_tokens']==16
+    assert report['all_drawings_equal']
+    for sample in report['samples']:
+        counts=sample['result']['runs'][0]['memo']
+        assert counts['hits']==80 and counts['misses']==16
+        if sample['mode']=='profiled':
+            assert sample['profile']['phases']['execute_other']['calls']==16
+            assert sample['profile']['phases']['decode_collect']['calls']==6

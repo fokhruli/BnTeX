@@ -164,13 +164,13 @@ def drawing_identity(path):
     return perf.sha(json.dumps(pages,sort_keys=True,ensure_ascii=True).encode())
 
 
-def run(installation,out,*,kind='prose',repetitions=3,detail=False,timeout=60):
-    if type(repetitions) is not int or not 1<=repetitions<=5:
-        raise ValueError('repetitions must be 1..5')
+def run(installation,out,*,kind='prose',repetitions=3,detail=False,timeout=60,memo=False):
+    if type(repetitions) is not int or not 1<=repetitions<=5 or type(memo) is not bool:
+        raise ValueError('repetitions must be 1..5 and memo must be Boolean')
     if out.exists() or any(p.is_symlink() for p in (out,*out.parents)):
         raise ValueError('output must be new and not symlinked')
     assets,identity=perf.installation(installation)
-    src,meta,words=fixtures.make_source(kind,1,False)
+    src,meta,words=fixtures.make_source(kind,1,memo)
     versions={'plain':src,'profiled':instrument_source(src,detail)}
     out.mkdir(parents=True)
     report={'schema':1,'installation':identity,'fixture':meta,'detail':detail,
@@ -208,11 +208,12 @@ def run(installation,out,*,kind='prose',repetitions=3,detail=False,timeout=60):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--installation',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
-    p.add_argument('--kind',choices=('distinct','digits-free','prose'),default='prose')
+    p.add_argument('--kind',choices=('distinct','repeated','digits-free','prose'),default='prose')
     p.add_argument('--repetitions',type=int,default=3);p.add_argument('--detail',action='store_true')
+    p.add_argument('--memo',action='store_true',help='Enable existing process-local reuse; report separately from first-use timing')
     args=p.parse_args()
     try:
-        result=run(args.installation,args.out,kind=args.kind,repetitions=args.repetitions,detail=args.detail)
+        result=run(args.installation,args.out,kind=args.kind,repetitions=args.repetitions,detail=args.detail,memo=args.memo)
         print(json.dumps(result['summary'],indent=2))
     except (ValueError,OSError) as exc:
         print(str(exc),file=sys.stderr);raise SystemExit(1)

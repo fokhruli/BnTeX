@@ -26,7 +26,9 @@ summed. Decode continuations are timed only until success/failure dispatch, not
 through the shaping invoked by the success continuation.
 
 The observer has overhead. Plain and instrumented runs are alternated in three
-fresh processes each, with memoization OFF and no test suite running concurrently.
+fresh processes each. The principal probes use memoization OFF; the repeated
+workload also has a separately reported memo-enabled control. No regression
+suite runs concurrently with the measurements.
 The report retains each sample, subprocess wall time, original source hashes,
 installation identity, extraction and immutability checks. These are local,
 shared-host measurements, not confidence intervals or uninstrumented CPU shares.
@@ -114,3 +116,37 @@ share the resulting JSON/PDF evidence, not those directories. A Python-free
 runtime capability was not rerun for this diagnostics-only patch; no production
 runtime files changed. Browser, independent-user and native human-review gates
 remain separate. This is not release authorization.
+
+## Review follow-up: repeated vocabulary measured separately
+
+The initial CLI omitted the repeated fixture. Review identified this coverage
+gap; `--kind repeated` and an explicit `--memo` switch are now available. The
+original distinct/prose measurements above are retained, not overwritten.
+
+Three additional alternating pairs use 96 occurrences of 16 distinct tokens.
+Without memoization, all 96 occurrences execute the shaper: plain median
+1.812 seconds (1.790-1.861), observed 2.045 (1.996-2.058). Median exclusive shares
+are 21.21% substitution driver, 17.04% matcher, 7.79% decode/collect, and 3.16%
+rendering. This is consistent with the first-use cost target, not a speed gain.
+
+With memoization explicitly enabled, both plain and observed runs report 80 hits,
+16 misses, 16 stored runs and no evictions. Plain median is 0.753 seconds
+(0.742-0.772), observed 0.768 (0.765-0.768). Exactly 16 shaping executions and six
+whole-span decoder calls are observed. Relative phase shares change: 11.77%
+substitution driver, 9.50% matcher, 26.38% decode/collect and 10.08% rendering.
+These are not first-use measurements and must not be pooled with memo-off data.
+Both controls pass drawing/resource equality, extraction and asset invariants.
+They use the same highly repetitive synthetic fixture, not representative prose.
+
+The final local test selection passed **29 tests in 19.12 seconds**, including
+the new repeated fixture and exact memo hit/miss/execution counts. Full-repository
+CI results for the updated commit must still be read from the completed job.
+
+```sh
+python tools/native_exclusive_profile.py \
+  --installation build/native-installation --out build/profile-repeated \
+  --kind repeated --detail --repetitions 3
+python tools/native_exclusive_profile.py \
+  --installation build/native-installation --out build/profile-repeated-memo \
+  --kind repeated --detail --repetitions 3 --memo
+```
