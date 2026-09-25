@@ -53,7 +53,7 @@
  {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_b_int{#2}\int_set:Nn\l__bn_z_int{\l__bn_b_int+1}
   \__bn_tick:\__bn_ignore:nnnnnn{\l__bn_b_int}{\l__bn_a_int}{0}{0}{1}{p}\bool_set_false:N\l__bn_a_bool
   \bool_if:NF\g__bn_ignore_bool
-   {\exp_args:Ne\clist_map_inline:nn{\__bn_tab:n{p_\int_use:N\l__bn_a_int _subs}}
+   {\exp_args:Ne\clist_map_inline:nn{\__bn_candidates:nnn{p}{\l__bn_a_int}{\__bn_get:nn{\l__bn_b_int}{gid}}}
      {\bool_if:NF\l__bn_a_bool
        {\__bn_try_position:nnn{##1}{\l__bn_a_int}{\l__bn_b_int}\bool_set_eq:NN\l__bn_a_bool\g__bn_success_bool\int_set_eq:NN\l__bn_z_int\g__bn_next_int}}}
   \int_gset_eq:NN\g__bn_next_int\l__bn_z_int\group_end:}
@@ -64,7 +64,10 @@
     \int_compare:nNnT{\__bn_tab:n{m_\__bn_get:nn{##1}{gid}_class}}={3}{\__bn_set:nnn{##1}{ax}{0}}}
   \exp_args:Ne\clist_map_inline:nn{\__bn_tab:n{gpos_roots}}
    {\int_zero:N\l__bn_a_int
-    \int_while_do:nn{\l__bn_a_int<\g__bn_count_int}{\__bn_apply_position:nn{##1}{\l__bn_a_int}\int_set_eq:NN\l__bn_a_int\g__bn_next_int}
+    \int_while_do:nn{\l__bn_a_int<\g__bn_count_int}
+     {\__bn_lookup_may_start:nnnTF{p}{##1}{\__bn_get:nn{\l__bn_a_int}{gid}}
+       {\__bn_apply_position:nn{##1}{\l__bn_a_int}\int_set_eq:NN\l__bn_a_int\g__bn_next_int}
+       {\__bn_tick:\int_incr:N\l__bn_a_int\int_gset_eq:NN\g__bn_next_int\l__bn_a_int}}
     \__bn_snapshot:n{GPOS-##1}}
   \int_zero:N\l__bn_a_int
   \int_step_inline:nnnn{0}{1}{\g__bn_count_int-1}

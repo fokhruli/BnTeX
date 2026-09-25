@@ -59,7 +59,9 @@
  {\iow_term:x{BNTEX-RUN|\g__bn_original_hex_tl|\int_use:N\g__bn_count_int}
   \int_step_inline:nnnn{0}{1}{\g__bn_count_int-1}
    {\iow_term:x{BNTEX-GLYPH|\__bn_get:nn{##1}{gid}|\__bn_get:nn{##1}{cl}|\__bn_get:nn{##1}{ax}|\__bn_get:nn{##1}{ay}|\__bn_get:nn{##1}{dx}|\__bn_get:nn{##1}{dy}|\__bn_get:nn{##1}{unsafe}}}}
-\cs_new:Npn\__bn_scaled:n #1 {\fp_to_dim:n{(#1)*\dim_to_fp:n{\l__bn_em_dim}/1000}}
+% e-TeX combines multiplication/division with a wide intermediate product.
+% Multiply the dimension by the integer first; do not form a truncated factor.
+\cs_new:Npn\__bn_scaled:n #1 {\dim_eval:n{\l__bn_em_dim * \int_eval:n{#1} / 1000}}
 \cs_new_protected:Npn\__bn_render:
  {\group_begin:\dim_set:Nn\l__bn_em_dim{\f@size pt}\int_zero:N\l__bn_a_int\int_zero:N\l__bn_b_int\int_zero:N\l__bn_c_int
   \int_step_inline:nnnn{0}{1}{\g__bn_count_int-1}
