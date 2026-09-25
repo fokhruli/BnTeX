@@ -1,0 +1,48 @@
+%% Explicit moving-text/PDF-string integration; automatic routing is deferred.
+%% Copyright 2026 BnTeX contributors. MIT; see LICENSE.
+\NeedsTeXFormat{LaTeX2e}[2022-06-01]
+\RequirePackage{bntex-native}
+\ProvidesExplPackage{bntex-native-integration}{2026-09-24}{0.1.0}
+  {Declared Bengali text in moving arguments and Unicode PDF strings}
+\msg_new:nnn {bntex-native-integration}{bad-key}
+  {Text~keys~must~be~1--64~ASCII~letters/digits/hyphens,~starting~with~a~letter.}
+\msg_new:nnn {bntex-native-integration}{duplicate}{Text~key~'#1'~already~exists.}
+\msg_new:nnn {bntex-native-integration}{unknown}{Unknown~declared~text~key~'#1'.}
+\msg_new:nnn {bntex-native-integration}{input}{A~nonempty~literal~UTF-8~text~span~is~required.}
+\tl_new:N \l__bni_pdf_tl
+\cs_new_protected:Npn \__bni_key:n #1
+  {\regex_match:nnF {\A[A-Za-z][A-Za-z0-9-]{0,63}\Z}{#1}
+     {\msg_fatal:nn {bntex-native-integration}{bad-key}}}
+\NewDocumentCommand \BnTeXNativeDeclareText {m +m}
+  {\__bni_key:n {#1}
+   \cs_if_exist:cT {__bni_text_#1}
+     {\msg_fatal:nnn {bntex-native-integration}{duplicate}{#1}}
+   \group_begin:
+   \bntex_utfviii_decode:nTF {#2}
+     {\seq_if_empty:NT \l_bntex_utfviii_scalars_seq
+        {\msg_fatal:nn {bntex-native-integration}{input}}
+      \tl_clear:N \l__bni_pdf_tl
+      \seq_map_inline:Nn \l_bntex_utfviii_scalars_seq
+        {\tl_put_right:Nn \l__bni_pdf_tl {\unichar{##1}}}
+      \cs_gset:cpn {__bni_text_#1}{#2}
+      \cs_gset:cpx {__bni_pdf_#1}{\exp_not:V \l__bni_pdf_tl}}
+     {\msg_fatal:nn {bntex-native-integration}{input}}
+   \group_end:}
+\cs_new_protected:Npn \__bni_typeset:n #1
+  {\__bni_key:n {#1}
+   \cs_if_exist:cTF {__bni_text_#1}
+     {\exp_args:Nv \bnNative {__bni_text_#1}}
+     {\msg_fatal:nnn {bntex-native-integration}{unknown}{#1}}}
+\NewDocumentCommand \BnTeXNativeText {m}{\__bni_typeset:n {#1}}
+\NewDocumentCommand \BnTeXNativeRegularText {m}
+  {\group_begin:\mdseries\upshape\__bni_typeset:n {#1}\group_end:}
+\cs_new:Npn \__bni_pdf:n #1
+  {\cs_if_exist:cTF {__bni_pdf_#1}
+     {\use:c {__bni_pdf_#1}}
+     {\msg_expandable_error:nnn {bntex-native-integration}{unknown}{#1}}}
+\AddToHook{package/hyperref/after}[bntex-native-integration]
+  {\pdfstringdefDisableCommands
+     {\cs_set_eq:NN \BnTeXNativeText \__bni_pdf:n
+      \cs_set_eq:NN \BnTeXNativeRegularText \__bni_pdf:n}}
+\ExplSyntaxOff
+\endinput

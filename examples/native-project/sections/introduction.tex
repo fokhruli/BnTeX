@@ -1,0 +1,36 @@
+\section{\BnTeXNativeRegularText{intro}}\label{sec:intro}
+\bnNative{বাংলা ভাষায় গবেষণার ফলাফল প্রকাশ করতে হলে যুক্তাক্ষর, কারচিহ্ন এবং শব্দের বিন্যাস সঠিক হওয়া দরকার। এই উদাহরণে একটি নির্দিষ্ট ফন্ট ব্যবহার করা হয়েছে।}
+
+This paragraph deliberately mixes English with \bnNative{বাংলা ভাষা} without
+changing the surrounding Latin font. New vocabulary can be entered directly
+inside the existing explicit command.
+
+\bnNative{শিক্ষার্থীদের প্রশ্নের উত্তর দিতে আমরা পদ্ধতিটি ধাপে ধাপে পরীক্ষা করছি।}\footnote{\bnNative{এটি ছোট আকারের বাংলা পাদটীকা।} The footnote uses its normal document size.}
+
+\subsection*{Mathematics with Bengali text}
+\bnNative{নিচের সমীকরণটি কেবল গাণিতিক বিন্যাসের উদাহরণ।}
+\begin{equation}\label{eq:update}
+ x_{t+1}=f(x_t,u_t)+w_t,\qquad
+ \text{\bnNative{যেখানে}}\quad x_t\in\mathbb{R}^{d}.
+\end{equation}
+\begin{equation*}
+ a_{\text{\bnNative{প্রথম}}}+a_{\text{\bnNative{দ্বিতীয়}}}
+ =a_{\text{\bnNative{মোট}}}.
+\end{equation*}
+
+\subsection*{A table with literal Bengali cells}
+\begin{table}[ht]
+\centering
+\caption{\BnTeXNativeText{table}}\label{tab:example}
+\begin{tabular}{@{}p{.42\linewidth}rr@{}}\toprule
+\bnNative{পরীক্ষা} & \bnNative{সংখ্যা} & \bnNative{মান}\\\midrule
+\bnNative{প্রথম নমুনা} & \bnNative{১২} & \bnNative{০.৭৫}\\
+\bnNative{দ্বিতীয় নমুনা} & \bnNative{১৮} & \bnNative{০.৮২}\\
+\bnNative{তৃতীয় নমুনা} & \bnNative{২৪} & \bnNative{০.৯১}\\\bottomrule
+\end{tabular}
+\end{table}
+
+\bnNative{সারণির মানগুলি বাস্তব গবেষণার ফলাফল নয়। এগুলি কেবল নথির বিভিন্ন অংশের বিন্যাস পরীক্ষা করার জন্য দেওয়া হয়েছে।}
+
+See Section~\ref{sec:results}, Table~\ref{tab:example}, and
+Equation~\eqref{eq:update} for cross-reference checks.

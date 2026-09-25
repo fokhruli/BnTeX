@@ -1,0 +1,147 @@
+%% Bengali ordering. Adapted from the issue-5 model and HarfBuzz 10.2.0.
+\ProvidesExplFile{bntex-native-reorder.def}{2026-09-24}{0.1.0}{Native Bengali reordering}
+\cs_new_protected:Npn \__bn_initial_range:nn #1#2
+ {\use:e{\exp_not:N\__bn_initial_range_args:nn{\int_eval:n{#1}}{\int_eval:n{#2}}}}
+\cs_new_protected:Npn \__bn_initial_range_args:nn #1#2
+ {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_b_int{#2}
+  \int_set_eq:NN\l__bn_c_int\l__bn_b_int\int_set_eq:NN\l__bn_d_int\l__bn_a_int
+  \bool_set_false:N\l__bn_a_bool
+  \int_compare:nNnF{\prop_item:Ne\g__bn_kinds_prop{\__bn_get:nn{\l__bn_a_int}{syl}}}={5}
+   {\int_compare:nNnF{\l__bn_b_int-\l__bn_a_int}<{3}
+     {\__bn_cat:nnF{\l__bn_a_int+2}{6,7}
+       {\int_compare:nNnT{\__bn_tab:n{reph_\__bn_get:nn{\l__bn_a_int}{gid}_\__bn_get:nn{\l__bn_a_int+1}{gid}}}={1}
+         {\int_set:Nn\l__bn_d_int{\l__bn_a_int+2}\int_set_eq:NN\l__bn_c_int\l__bn_a_int\bool_set_true:N\l__bn_a_bool}}}
+    \bool_set_false:N\l__bn_b_bool\bool_set_true:N\l__bn_c_bool
+    \int_step_inline:nnnn{\l__bn_b_int-1}{-1}{\l__bn_d_int}
+     {\bool_if:NT\l__bn_c_bool
+       {\bool_if:nTF{\__bn_cat_p:nn{##1}{1,2,3,10,11} && \int_compare_p:n{\__bn_get:nn{##1}{lig}=0}}
+         {\int_set:Nn\l__bn_c_int{##1}\int_set:Nn\l__bn_e_int{\__bn_get:nn{##1}{pos}}
+          \bool_if:nT{\int_compare_p:n{\l__bn_e_int!=8} && (\int_compare_p:n{\l__bn_e_int!=11} || \l__bn_b_bool)}{\bool_set_false:N\l__bn_c_bool}
+          \int_compare:nNnT{\l__bn_e_int}={8}{\bool_set_true:N\l__bn_b_bool}}
+         {\int_compare:nNnT{##1}>{\l__bn_a_int}
+           {\bool_if:nT{\__bn_cat_p:nn{##1}{6} && \__bn_cat_p:nn{##1-1}{5}}{\bool_set_false:N\l__bn_c_bool}}}}}
+    \int_compare:nNnT{\l__bn_c_int}={\l__bn_a_int}{\bool_set_false:N\l__bn_a_bool}
+    \int_step_inline:nnnn{\l__bn_a_int}{1}{\int_min:nn{\l__bn_c_int}{\l__bn_b_int}-1}
+     {\__bn_set:nnn{##1}{pos}{\int_min:nn{\__bn_get:nn{##1}{pos}}{3}}}
+    \int_compare:nNnT{\l__bn_c_int}<{\l__bn_b_int}{\__bn_set:nnn{\l__bn_c_int}{pos}{4}}
+    \bool_if:NT\l__bn_a_bool{\__bn_set:nnn{\l__bn_a_int}{pos}{1}}
+    \int_zero:N\l__bn_e_int
+    \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_b_int-1}
+     {\__bn_cat:nnTF{##1}{4,5,6,7}
+       {\__bn_set:nnn{##1}{pos}{\l__bn_e_int}
+        \bool_if:nT{\__bn_cat_p:nn{##1}{5} && \int_compare_p:n{\l__bn_e_int=2}}
+         {\bool_set_true:N\l__bn_c_bool
+          \int_step_inline:nnnn{##1-1}{-1}{\l__bn_a_int}
+           {\bool_if:NT\l__bn_c_bool{\int_compare:nNnF{\__bn_get:nn{####1}{pos}}={2}
+             {\__bn_set:nnn{##1}{pos}{\__bn_get:nn{####1}{pos}}\bool_set_false:N\l__bn_c_bool}}}}}
+       {\int_compare:nNnF{\__bn_get:nn{##1}{pos}}={14}{\int_set:Nn\l__bn_e_int{\__bn_get:nn{##1}{pos}}}}}
+    \int_set_eq:NN\l__bn_e_int\l__bn_c_int
+    \int_step_inline:nnnn{\l__bn_c_int+1}{1}{\l__bn_b_int-1}
+     {\__bn_cat:nnTF{##1}{1,2,3,10,11}
+       {\int_step_inline:nnnn{\l__bn_e_int+1}{1}{##1-1}
+         {\int_compare:nNnT{\__bn_get:nn{####1}{pos}}<{14}{\__bn_set:nnn{####1}{pos}{\__bn_get:nn{##1}{pos}}}}
+        \int_set:Nn\l__bn_e_int{##1}}
+       {\__bn_cat:nnT{##1}{8}{\int_set:Nn\l__bn_e_int{##1}}}}
+    % Stable bucket sort; retain the permutation for exact cluster merging.
+    \seq_clear:N\l__bn_a_seq\seq_clear:N\l__bn_b_seq
+    \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_b_int-1}
+     {\seq_put_right:Nx\l__bn_a_seq{\__bn_id:n{##1}}
+      \cs_set:cpx{__bn_original_\__bn_id:n{##1}}{\int_eval:n{##1-\l__bn_a_int}}}
+    \int_step_inline:nnnn{0}{1}{15}
+     {\seq_map_inline:Nn\l__bn_a_seq{\int_compare:nNnT{\__bn_field:nn{####1}{pos}}={##1}{\seq_put_right:Nn\l__bn_b_seq{####1}}}}
+    \seq_map_indexed_inline:Nn\l__bn_b_seq{\intarray_gset:Nnn\g__bn_order_intarray{\l__bn_a_int+##1}{##2}}
+    \int_set_eq:NN\l__bn_c_int\l__bn_b_int\bool_set_true:N\l__bn_c_bool
+    \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_b_int-1}
+     {\bool_if:NT\l__bn_c_bool{\int_compare:nNnT{\__bn_get:nn{##1}{pos}}={4}{\int_set:Nn\l__bn_c_int{##1}\bool_set_false:N\l__bn_c_bool}}}
+    \int_step_inline:nnnn{\l__bn_c_int-\l__bn_a_int}{1}{\l__bn_b_int-\l__bn_a_int-1}
+     {\cs_if_exist:cF{__bn_visited_##1}
+       {\int_set:Nn\l__bn_f_int{##1}\int_set_eq:NN\l__bn_g_int\l__bn_f_int\int_set_eq:NN\l__bn_h_int\l__bn_f_int
+        \bool_while_do:nn{!\cs_if_exist_p:c{__bn_visited_\int_use:N\l__bn_f_int}}
+         {\cs_set:cpn{__bn_visited_\int_use:N\l__bn_f_int}{1}
+          \int_set:Nn\l__bn_g_int{\int_min:nn{\l__bn_g_int}{\l__bn_f_int}}\int_set:Nn\l__bn_h_int{\int_max:nn{\l__bn_h_int}{\l__bn_f_int}}
+          \int_set:Nn\l__bn_f_int{\use:c{__bn_original_\seq_item:Nn\l__bn_b_seq{\l__bn_f_int+1}}}}
+        \__bn_merge:nn{\int_max:nn{\l__bn_c_int}{\l__bn_a_int+\l__bn_g_int}}{\l__bn_a_int+\l__bn_h_int+1}}}
+    \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_b_int-1}
+     {\int_compare:nNnT{\__bn_get:nn{##1}{pos}}={1}{\__bn_addmask:nn{##1}{1}}
+      \int_compare:nNnT{##1}<{\l__bn_c_int}{\__bn_addmask:nn{##1}{16}\__bn_addmask:nn{##1}{4}}
+      \int_compare:nNnT{##1}>{\l__bn_c_int}{\__bn_addmask:nn{##1}{4}\__bn_addmask:nn{##1}{8}\__bn_addmask:nn{##1}{32}}}
+    \int_step_inline:nnnn{\l__bn_a_int+1}{1}{\l__bn_b_int-1}
+     {\__bn_cat:nnT{##1}{7}
+       {\int_set:Nn\l__bn_e_int{##1-1}\bool_set_true:N\l__bn_c_bool
+        \bool_while_do:nn{\int_compare_p:n{\l__bn_e_int>=\l__bn_a_int} && \l__bn_c_bool}
+         {\__bn_delmask:nn{\l__bn_e_int}{16}\__bn_cat:nnT{\l__bn_e_int}{1,2,3,10,11}{\bool_set_false:N\l__bn_c_bool}\int_decr:N\l__bn_e_int}}}
+    \__bn_snapshot:n{initial-reorder}}
+  \group_end:}
+\cs_new_protected:Npn \__bn_initial:
+ {\group_begin:
+  \int_step_inline:nnnn{0}{1}{\g__bn_count_int-1}
+   {\__bn_cat:nnT{##1}{1,2,3,10,11}{\__bn_set:nnn{##1}{pos}{\__bn_tab:n{dyn_\__bn_get:nn{##1}{gid}}}}}
+  \int_zero:N\l__bn_a_int
+  \int_while_do:nn{\l__bn_a_int<\g__bn_count_int}
+   {\int_set:Nn\l__bn_b_int{\l__bn_a_int+1}\bool_set_true:N\l__bn_a_bool
+    \bool_while_do:nn{\int_compare_p:n{\l__bn_b_int<\g__bn_count_int} && \l__bn_a_bool}
+     {\int_compare:nNnTF{\__bn_get:nn{\l__bn_a_int}{syl}}={\__bn_get:nn{\l__bn_b_int}{syl}}{\int_incr:N\l__bn_b_int}{\bool_set_false:N\l__bn_a_bool}}
+    \__bn_initial_range:nn{\l__bn_a_int}{\l__bn_b_int}\int_set_eq:NN\l__bn_a_int\l__bn_b_int}
+  \group_end:}
+\cs_new_protected:Npn \__bn_final_range:nn #1#2
+ {\use:e{\exp_not:N\__bn_final_range_args:nn{\int_eval:n{#1}}{\int_eval:n{#2}}}}
+\cs_new_protected:Npn \__bn_final_range_args:nn #1#2
+ {\group_begin:\int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_b_int{#2}
+  \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_b_int-1}
+   {\bool_if:nT{\int_compare_p:n{\__bn_get:nn{##1}{gid}=\__bn_tab:n{cp_2509_g}} && \int_compare_p:n{\__bn_get:nn{##1}{lig}=1} && \int_compare_p:n{\__bn_get:nn{##1}{mult}=1}}
+     {\__bn_set:nnn{##1}{cat}{5}\__bn_set:nnn{##1}{lig}{0}\__bn_set:nnn{##1}{mult}{0}}}
+  \int_set_eq:NN\l__bn_c_int\l__bn_b_int\bool_set_true:N\l__bn_a_bool
+  \int_step_inline:nnnn{\l__bn_a_int}{1}{\l__bn_b_int-1}
+   {\bool_if:NT\l__bn_a_bool{\int_compare:nNnF{\__bn_get:nn{##1}{pos}}<{4}{\int_set:Nn\l__bn_c_int{##1}\bool_set_false:N\l__bn_a_bool}}}
+  \bool_if:nT{\int_compare_p:n{\l__bn_c_int<\l__bn_b_int} && \int_compare_p:n{\l__bn_c_int>\l__bn_a_int}}
+   {\int_compare:nNnT{\__bn_get:nn{\l__bn_c_int}{pos}}>{4}{\int_decr:N\l__bn_c_int}}
+  \int_compare:nNnT{\l__bn_c_int}={\l__bn_b_int}{\__bn_cat:nnT{\l__bn_b_int-1}{6}{\int_decr:N\l__bn_c_int}}
+  \bool_set_true:N\l__bn_a_bool
+  \bool_while_do:nn{\int_compare_p:n{\l__bn_c_int>\l__bn_a_int} && \int_compare_p:n{\l__bn_c_int<\l__bn_b_int} && \l__bn_a_bool}
+   {\bool_if:nTF{\__bn_cat_p:nn{\l__bn_c_int}{4,5} && \int_compare_p:n{\__bn_get:nn{\l__bn_c_int}{lig}=0}}
+     {\int_decr:N\l__bn_c_int}{\bool_set_false:N\l__bn_a_bool}}
+  \bool_if:nT{\int_compare_p:n{\l__bn_a_int<\l__bn_c_int} && \int_compare_p:n{\l__bn_b_int-\l__bn_a_int>1}}
+   {\int_set:Nn\l__bn_d_int{\l__bn_c_int-1}
+    \int_compare:nNnT{\l__bn_c_int}={\l__bn_b_int}{\int_decr:N\l__bn_d_int}
+    \bool_set_true:N\l__bn_a_bool
+    \bool_while_do:nn{\int_compare_p:n{\l__bn_d_int>\l__bn_a_int} && \l__bn_a_bool}
+     {\bool_if:nTF{\__bn_cat_p:nn{\l__bn_d_int}{5,8} && \int_compare_p:n{\__bn_get:nn{\l__bn_d_int}{lig}=0}}
+       {\bool_set_false:N\l__bn_b_bool
+        \bool_if:nT{\__bn_cat_p:nn{\l__bn_d_int}{5} && \int_compare_p:n{\__bn_get:nn{\l__bn_d_int}{pos}!=2} && \int_compare_p:n{\l__bn_d_int+1<\l__bn_b_int}}
+         {\__bn_cat:nnT{\l__bn_d_int+1}{6}{\bool_set_true:N\l__bn_b_bool}}
+        \bool_if:NTF\l__bn_b_bool{\int_decr:N\l__bn_d_int}{\bool_set_false:N\l__bn_a_bool}}
+       {\int_decr:N\l__bn_d_int}}
+    \bool_if:nF{\__bn_cat_p:nn{\l__bn_d_int}{5} && \int_compare_p:n{\__bn_get:nn{\l__bn_d_int}{lig}=0}}{\int_set_eq:NN\l__bn_d_int\l__bn_a_int}
+    \bool_if:nTF{\int_compare_p:n{\l__bn_d_int>\l__bn_a_int} && \int_compare_p:n{\__bn_get:nn{\l__bn_d_int}{pos}!=2}}
+     {\int_step_inline:nnnn{\l__bn_d_int-1}{-1}{\l__bn_a_int}
+       {\int_compare:nNnT{\__bn_get:nn{##1}{pos}}={2}
+         {\__bn_move:nn{##1}{\l__bn_d_int}\__bn_merge:nn{\l__bn_d_int}{\int_min:nn{\l__bn_b_int}{\l__bn_c_int+1}}\int_decr:N\l__bn_d_int}}}
+     {\bool_set_true:N\l__bn_a_bool
+      \int_step_inline:nnnn{\l__bn_a_int}{1}{\int_min:nn{\l__bn_c_int}{\l__bn_b_int}-1}
+       {\bool_if:NT\l__bn_a_bool{\int_compare:nNnT{\__bn_get:nn{##1}{pos}}={2}
+         {\__bn_merge:nn{##1}{\int_min:nn{\l__bn_b_int}{\l__bn_c_int+1}}\bool_set_false:N\l__bn_a_bool}}}}}
+  \bool_if:nT{\int_compare_p:n{\l__bn_b_int-\l__bn_a_int>1} && \int_compare_p:n{\__bn_get:nn{\l__bn_a_int}{pos}=1} && \int_compare_p:n{\__bn_get:nn{\l__bn_a_int}{lig}=1} && \int_compare_p:n{\__bn_get:nn{\l__bn_a_int}{mult}=0}}
+   {\int_set:Nn\l__bn_d_int{\l__bn_a_int+1}\bool_set_true:N\l__bn_a_bool
+    \bool_while_do:nn{\int_compare_p:n{\l__bn_d_int<\l__bn_c_int} && \l__bn_a_bool}
+     {\bool_if:nTF{\__bn_cat_p:nn{\l__bn_d_int}{5} && \int_compare_p:n{\__bn_get:nn{\l__bn_d_int}{lig}=0}}{\bool_set_false:N\l__bn_a_bool}{\int_incr:N\l__bn_d_int}}
+    \int_compare:nNnTF{\l__bn_d_int}<{\l__bn_c_int}
+     {\int_compare:nNnT{\l__bn_d_int+1}<{\l__bn_c_int}{\__bn_cat:nnT{\l__bn_d_int+1}{6,7}{\int_incr:N\l__bn_d_int}}}
+     {\int_set:Nn\l__bn_d_int{\int_min:nn{\l__bn_c_int}{\l__bn_b_int-1}}\bool_set_true:N\l__bn_a_bool
+      \bool_while_do:nn{\int_compare_p:n{\l__bn_d_int+1<\l__bn_b_int} && \l__bn_a_bool}
+       {\exp_args:Nne\clist_if_in:nnTF{11,12,14}{\__bn_get:nn{\l__bn_d_int+1}{pos}}{\bool_set_false:N\l__bn_a_bool}{\int_incr:N\l__bn_d_int}}}
+    \__bn_merge:nn{\l__bn_a_int}{\l__bn_d_int+1}\__bn_move:nn{\l__bn_a_int}{\l__bn_d_int}
+    \bool_if:nT{\int_compare_p:n{\l__bn_a_int<\l__bn_c_int} && \int_compare_p:n{\l__bn_c_int<=\l__bn_d_int}}{\int_decr:N\l__bn_c_int}}
+  \int_compare:nNnT{\__bn_get:nn{\l__bn_a_int}{pos}}={2}
+   {\int_compare:nNnTF{\l__bn_a_int}={0}{\__bn_addmask:nn{\l__bn_a_int}{64}}
+     {\__bn_cat:nnTF{\l__bn_a_int-1}{10,11,12}{\__bn_addmask:nn{\l__bn_a_int}{64}}{\__bn_unsafe:nn{\l__bn_a_int-1}{\l__bn_a_int+1}}}}
+  \__bn_snapshot:n{final-reorder}\group_end:}
+\cs_new_protected:Npn \__bn_final:
+ {\group_begin:\int_zero:N\l__bn_a_int
+  \int_while_do:nn{\l__bn_a_int<\g__bn_count_int}
+   {\int_set:Nn\l__bn_b_int{\l__bn_a_int+1}\bool_set_true:N\l__bn_a_bool
+    \bool_while_do:nn{\int_compare_p:n{\l__bn_b_int<\g__bn_count_int} && \l__bn_a_bool}
+     {\int_compare:nNnTF{\__bn_get:nn{\l__bn_a_int}{syl}}={\__bn_get:nn{\l__bn_b_int}{syl}}{\int_incr:N\l__bn_b_int}{\bool_set_false:N\l__bn_a_bool}}
+    \__bn_final_range:nn{\l__bn_a_int}{\l__bn_b_int}\int_set_eq:NN\l__bn_a_int\l__bn_b_int}
+  \group_end:}
+\ExplSyntaxOff
+\endinput
