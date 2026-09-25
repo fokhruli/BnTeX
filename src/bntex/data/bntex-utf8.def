@@ -209,7 +209,7 @@
                    \int_compare_p:nNn {"##3} < {13}}
                   {\int_compare_p:nNn {"##3} = {13} &&
                    \int_compare_p:nNn {##2} > {127}}
-                  {\__bntex_utfviii_push_byte:n {##2}}
+                  {\seq_put_right:Nx \l_bntex_utfviii_bytes_seq {\int_eval:n {##2}}}
                   {
                     \__bntex_utfviii_fail:nnn {non-literal}
                       {\seq_count:N \l_bntex_utfviii_bytes_seq}
@@ -219,7 +219,8 @@
           }
       }
     \str_if_empty:NTF \l_bntex_utfviii_error_str
-      {\__bntex_utfviii_run:}
+      {\tl_set:Nx \l_bntex_utfviii_hex_tl {\pdfescapehex{\detokenize{#1}}}
+       \__bntex_utfviii_run:}
       {
         \seq_clear:N \l_bntex_utfviii_bytes_seq
         \tl_clear:N \l_bntex_utfviii_hex_tl

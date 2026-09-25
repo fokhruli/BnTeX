@@ -33,7 +33,46 @@
 \cs_new:Npn \__bn_id:n #1 {\intarray_item:Nn \g__bn_order_intarray {#1+1}}
 \cs_new:Npn \__bn_field:nn #1#2 {\intarray_item:cn {g__bn_#2_intarray}{#1}}
 \cs_new:Npn \__bn_get:nn #1#2 {\__bn_field:nn {\__bn_id:n {#1}}{#2}}
-\cs_new_protected:Npn \__bn_setid:nnn #1#2#3 {\intarray_gset:cnn {g__bn_#2_intarray}{#1}{#3}}
+% Specialize setters once. Only a glyph-ID store updates lookup activation.
+\clist_map_inline:Nn \c__bn_fields_clist
+ {\cs_new_protected:cpx{__bn_store_#1:nn}##1##2
+   {\exp_not:N\intarray_gset:Nnn\exp_not:c{g__bn_#1_intarray}{##1}{##2}}}
+\cs_new_protected:Npn \__bn_setid:nnn #1#2#3
+ {\use:c{__bn_store_#2:nn}{#1}{#3}}
+\int_new:N\g__bn_activity_epoch_int
+\tl_new:N\g__bn_activity_stamp_tl
+\cs_new_protected:Npn\__bn_activity_reset:
+ {\int_compare:nNnT{\g__bn_activity_epoch_int}={1000000000}
+   {\int_step_inline:nnnn{0}{1}{639}{\cs_undefine:c{__bn_seen_glyph_##1}}
+    \int_step_inline:nnnn{0}{1}{127}
+     {\cs_undefine:c{__bn_active_s_##1}\cs_undefine:c{__bn_active_p_##1}}
+    \int_gzero:N\g__bn_activity_epoch_int}
+  \int_gincr:N\g__bn_activity_epoch_int
+  \tl_gset:Nx\g__bn_activity_stamp_tl{\int_use:N\g__bn_activity_epoch_int}}
+\cs_new_protected:Npn\__bn_activate_gid:n #1
+ {\cs_if_exist:cT{__bnp_activity_abi}
+   {\cs_if_eq:cNF{__bn_seen_glyph_#1}\g__bn_activity_stamp_tl
+     {\int_compare:nNnT{#1}<{0}{\__bn_fail:n{invalid~activity~glyph}}
+      \int_compare:nNnT{#1}>{639}{\__bn_fail:n{invalid~activity~glyph}}
+      \cs_gset_eq:cN{__bn_seen_glyph_#1}\g__bn_activity_stamp_tl
+      \use:c{__bnp_activate_#1}}}}
+\cs_set_protected:Npn\__bn_store_gid:nn #1#2
+ {\use:e{\exp_not:N\__bn_store_gid_args:nn{\int_eval:n{#1}}{\int_eval:n{#2}}}}
+\cs_new_protected:Npn\__bn_store_gid_args:nn #1#2
+ {\intarray_gset:Nnn\g__bn_gid_intarray{#1}{#2}\__bn_activate_gid:n{#2}}
+\prg_new_conditional:Npnn\__bn_lookup_active:nn #1#2{TF}
+ {\cs_if_exist:cTF{__bnp_activity_abi}
+   {\cs_if_eq:cNTF{__bn_active_#1_\int_eval:n{#2}}\g__bn_activity_stamp_tl
+     {\prg_return_true:}{\prg_return_false:}}
+   {\prg_return_true:}}
+% Charge the same unsuccessful visits as the dense scan without executing it.
+\cs_new_protected:Npn\__bn_skip_pass:n #1
+ {\int_gadd:Nn\g__bn_ops_int{\g__bn_count_int}
+  \int_compare:nNnT{\g__bn_ops_int}>{2000000}{\__bn_fail:n{operation~budget~exceeded}}
+  \int_compare:nNnT{\g__bn_count_int}>{0}
+   {\int_gset_eq:NN\g__bn_next_int\g__bn_count_int
+    \str_if_eq:nnT{#1}{s}{\bool_gset_false:N\g__bn_success_bool}}}
+
 \cs_new_protected:Npn \__bn_set:nnn #1#2#3 {\__bn_setid:nnn {\__bn_id:n {#1}}{#2}{#3}}
 % Static character-category membership; expandable inside boolean expressions.
 % These sets describe grammar classes, never words or shaped vocabulary.
@@ -61,6 +100,10 @@
 \cs_new:cpn{__bn_catset_7_7}{1}
 \cs_new:cpn{__bn_catset_8_8}{1}
 \cs_new:cpn{__bn_catset_9_9}{1}
+\cs_new:cpn{__bn_catset_4,5,8,9_4}{1}
+\cs_new:cpn{__bn_catset_4,5,8,9_5}{1}
+\cs_new:cpn{__bn_catset_4,5,8,9_8}{1}
+\cs_new:cpn{__bn_catset_4,5,8,9_9}{1}
 \prg_new_conditional:Npnn \__bn_cat:nn #1#2 {p,T,F,TF}
  {\cs_if_exist:cTF{__bn_catset_#2_\__bn_get:nn{#1}{cat}}
   {\prg_return_true:}{\prg_return_false:}}
