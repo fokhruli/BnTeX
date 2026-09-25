@@ -96,6 +96,29 @@ def grammar_dfa():
     return trans,accepted
 
 
+def entry_glyphs(subtable: dict) -> tuple[int, ...]:
+    """Conservative first-input coverage, not an example-text index.
+
+    Keep all pair-class coverage (including zero-valued class-zero rules) and
+    all contextual input coverage (including zero-action blocking rules).
+    Nested lookup references and original subtable/rule order stay unchanged.
+    """
+    kind = subtable['kind']
+    if kind in ('single', 'multiple', 'pair-glyph'):
+        glyphs = (row[0] for row in subtable['entries'])
+    elif kind == 'ligature':
+        glyphs = (pattern[0] for pattern, _ in subtable['entries'])
+    elif kind == 'chain':
+        glyphs = subtable['inputs'][0]
+    elif kind == 'pair-class':
+        glyphs = subtable['coverage']
+    elif kind in ('mark-base', 'mark-mark'):
+        glyphs = (row[0] for row in subtable['marks'])
+    else:
+        raise ValueError(f'No first-input dispatch for {kind!r}')
+    return tuple(sorted(set(glyphs)))
+
+
 def emit_tables(p:dict)->bytes:
     """Internal ASCII table serializer, called only after an exact profile hash check."""
     lines=['% BnTeX native profile ABI 1. Installation data; no vocabulary.',r'\ExplSyntaxOn']
@@ -130,7 +153,14 @@ def emit_tables(p:dict)->bytes:
     tid=0;rid=0
     for table,letter in (('gsub','s'),('gpos','p')):
         for lookup in p[table]:
-            lid=lookup['index'];tids=[]
+            lid=lookup['index'];tids=[]; candidates={}
+            direct_pair = (letter == 's' and lookup['flags'] == 0
+                           and all(st['kind'] == 'ligature' for st in lookup['subtables']))
+            if direct_pair:
+                put(f's_{lid}_pair_mode', 1)
+                for a, b in sorted({tuple(pattern[:2]) for st in lookup['subtables']
+                                    for pattern, _ in st['entries']}):
+                    put(f's_{lid}_pair_{a}_{b}', 1)
             for g,c in enumerate(p['glyph_classes']):
                 f=lookup['flags'];skip=(c==1 and f&2) or (c==2 and f&4)
                 if c==3:
@@ -138,14 +168,23 @@ def emit_tables(p:dict)->bytes:
                 if skip:put(f'ignore_{letter}_{lid}_{g}',1)
             for st in lookup['subtables']:
                 tid+=1;tids.append(tid);pre=f't_{tid}_';kind=st['kind']
+                for glyph in entry_glyphs(st):
+                    candidates.setdefault(glyph, []).append(tid)
                 put(pre+'type',{'single':1,'multiple':2,'ligature':4,'chain':6,'pair-glyph':12,'pair-class':13,'mark-base':14,'mark-mark':16}[kind])
                 if kind in ('single','multiple'):
                     for a,b in st['entries']:put(pre+f'map_{a}',b)
                 elif kind=='ligature':
-                    rules=[]
+                    rules=[]; by_first={}; by_pair={}
                     for gs,g in st['entries']:
                         rid+=1;rules.append(rid);put(f'r_{rid}_first',gs[0]);put(f'r_{rid}_out',g);put(f'r_{rid}_pat',pattern([(a,) for a in gs]))
+                        by_first.setdefault(gs[0], []).append(rid)
+                        by_pair.setdefault(tuple(gs[:2]), []).append(rid)
                     put(pre+'rules',rules)
+                    for glyph, rule_ids in sorted(by_first.items()):
+                        put(pre+f'rules_at_{glyph}', rule_ids)
+                    if direct_pair:
+                        for (a, b), rule_ids in sorted(by_pair.items()):
+                            put(pre+f'rules_pair_{a}_{b}', rule_ids)
                 elif kind=='chain':
                     for key in ('inputs','backtrack','lookahead'):put(pre+key,pattern(st[key]))
                     put(pre+'actions',len(st['actions']))
@@ -170,6 +209,8 @@ def emit_tables(p:dict)->bytes:
                         for c,a in enumerate(anchors):
                             if a is not None:put(pre+f'base_{g}_{c}',1);put(pre+f'base_{g}_{c}_x',a['x']);put(pre+f'base_{g}_{c}_y',a['y'])
             put(f'{letter}_{lid}_subs',tids)
+            for glyph, selected in sorted(candidates.items()):
+                put(f'{letter}_{lid}_at_{glyph}', selected)
     sf={f['tag']:f['lookups'] for f in p['gsub_features']};gs={l['index']:l for l in p['gsub']}
     def would(tag,parts):return any(st['kind']=='ligature' and any(tuple(a)==tuple(parts) for a,_ in st['entries']) for i in sf.get(tag,()) for st in gs[i]['subtables'])
     h=dict(p['cmap'])[0x9cd]
@@ -195,6 +236,7 @@ def emit_tables(p:dict)->bytes:
         lines.append(r'\cs_gset:cpn {__bnp_stage_'+stage+'}{'+''.join(calls)+'}')
     for mask in masks:
         for n in range(128):put(f'mask_{mask}_{n}',int(mask==0 or bool(mask&n)))
+    put('dispatch_abi', 1)
     put('gpos_roots',sorted({i for f in p['gpos_features'] for i in f['lookups']}))
     lines += [r'\ExplSyntaxOff',r'\endinput']
     return ('\n'.join(lines)+'\n').encode('ascii')
