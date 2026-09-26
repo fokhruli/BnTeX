@@ -47,6 +47,47 @@
      {\bool_if:nT{\int_compare_p:n{#3=0} || \int_compare_p:n{#4=1} || \int_compare_p:n{#5=1}}{\bool_gset_true:N\g__bn_ignore_bool}}
     \int_compare:nNnT{\__bn_get:nn{#1}{cp}}={8204}
      {\bool_if:nT{\int_compare_p:n{#5=1} || (\int_compare_p:n{#4=1} && \int_compare_p:n{#3=0})}{\bool_gset_true:N\g__bn_ignore_bool}}}}
+% Generated matching for two-component ligatures with exactly IgnoreMarks.
+% Only manual-joiner input mode is eligible. All contextual/other paths retain
+% the generic matcher below. Preserve match positions, ignore state and ticks.
+\bool_new:N\l__bn_mark_pair_enabled_bool
+\bool_set_true:N\l__bn_mark_pair_enabled_bool
+\cs_new_protected:Npn\__bn_match_lig:nnnnnn #1#2#3#4#5#6
+ {\bool_if:NTF\l__bn_mark_pair_enabled_bool
+   {\int_compare:nNnTF{#5}={1}
+     {\cs_if_exist:cTF{__bnp_r_\int_eval:n{#1}_mark_pair}
+       {\use:c{__bnp_r_\int_eval:n{#1}_mark_pair}{#3}{#6}{#4}}
+       {\__bn_match_lig_generic:nnnnnn{#1}{#2}{#3}{#4}{#5}{#6}}}
+     {\__bn_match_lig_generic:nnnnnn{#1}{#2}{#3}{#4}{#5}{#6}}}
+   {\__bn_match_lig_generic:nnnnnn{#1}{#2}{#3}{#4}{#5}{#6}}}
+\cs_new_protected:Npn\__bn_match_lig_generic:nnnnnn #1#2#3#4#5#6
+ {\__bn_match:nnnnnnnn{#3}{\__bn_tab:n{r_\int_eval:n{#1}_pat}}{#2}{1}{#6}{#5}{#4}{0}}
+\cs_new_protected:Npn\__bn_match_mark_pair:nnnnnn #1#2#3#4#5#6
+ {\use:e{\exp_not:N\__bn_match_mark_pair_args:nnnnnn
+  {\int_eval:n{#1}}{\int_eval:n{#2}}{\int_eval:n{#3}}
+  {\int_eval:n{#4}}{\int_eval:n{#5}}{\int_eval:n{#6}}}}
+\cs_new_protected:Npn\__bn_match_mark_pair_args:nnnnnn #1#2#3#4#5#6
+ {\group_begin:
+  \int_set:Nn\l__bn_a_int{#1}\int_set:Nn\l__bn_e_int{#5}\int_set:Nn\l__bn_g_int{#6}
+  \seq_gclear:N\g__bn_match_seq\bool_set_true:N\l__bn_a_bool
+  \__bn_mark_pair_atom:nn{#2}{#4}
+  \bool_if:NT\l__bn_a_bool{\__bn_mark_pair_atom:nn{#3}{#4}}
+  \bool_gset_eq:NN\g__bn_success_bool\l__bn_a_bool
+  \bool_if:NF\l__bn_a_bool{\seq_gclear:N\g__bn_match_seq}\group_end:}
+\cs_new_protected:Npn\__bn_mark_pair_atom:nn #1#2
+ {\int_compare:nNnTF{\l__bn_a_int}<{0}
+   {\bool_set_false:N\l__bn_a_bool}
+   {\int_compare:nNnTF{\l__bn_a_int}<{\g__bn_count_int}
+     {\int_compare:nNnTF{\__bn_tab:n{ignore_s_#2_\__bn_get:nn{\l__bn_a_int}{gid}}}={1}
+       {\bool_gset_true:N\g__bn_ignore_bool\int_incr:N\l__bn_a_int\__bn_tick:
+        \__bn_mark_pair_atom:nn{#1}{#2}}
+       {\bool_gset_false:N\g__bn_ignore_bool\__bn_tick:
+        \int_compare:nNnF{\__bn_get:nn{\l__bn_a_int}{gid}}={#1}{\bool_set_false:N\l__bn_a_bool}
+        \int_compare:nNnF{\l__bn_e_int}<{0}
+         {\int_compare:nNnF{\__bn_get:nn{\l__bn_a_int}{syl}}={\l__bn_e_int}{\bool_set_false:N\l__bn_a_bool}}
+        \__bn_mask:nnF{\l__bn_g_int}{\__bn_get:nn{\l__bn_a_int}{mask}}{\bool_set_false:N\l__bn_a_bool}
+        \bool_if:NT\l__bn_a_bool{\seq_gput_right:Nx\g__bn_match_seq{\int_use:N\l__bn_a_int}\int_incr:N\l__bn_a_int}}}
+     {\bool_set_false:N\l__bn_a_bool}}}
 % start, pattern, lookup, direction, syllable(-1=any), manual, mask, context
 \cs_new_protected:Npn \__bn_match:nnnnnnnn #1#2#3#4#5#6#7#8
  {\use:e{\exp_not:N\__bn_match_args:nnnnnnnn{\int_eval:n{#1}}{\int_eval:n{#2}}{\int_eval:n{#3}}{\int_eval:n{#4}}{\int_eval:n{#5}}{\int_eval:n{#6}}{\int_eval:n{#7}}{\int_eval:n{#8}}}}
@@ -135,7 +176,7 @@
   \int_set:Nn\l__bn_d_int{#4}\int_set:Nn\l__bn_e_int{#5}\int_set:Nn\l__bn_f_int{#6}
   \bool_gset_false:N\g__bn_success_bool\__bn_tick:
   \int_compare:nNnT{\__bn_tab:n{r_\int_use:N\l__bn_a_int _first}}={\__bn_get:nn{\l__bn_c_int}{gid}}
-   {\__bn_match:nnnnnnnn{\l__bn_c_int}{\__bn_tab:n{r_\int_use:N\l__bn_a_int _pat}}{\l__bn_b_int}{1}{\l__bn_f_int}{\l__bn_e_int}{\l__bn_d_int}{0}
+   {\__bn_match_lig:nnnnnn{\l__bn_a_int}{\l__bn_b_int}{\l__bn_c_int}{\l__bn_d_int}{\l__bn_e_int}{\l__bn_f_int}
     \bool_if:NT\g__bn_success_bool
      {\seq_set_eq:NN\l__bn_a_seq\g__bn_match_seq\__bn_compatible:Nn\l__bn_a_seq{\l__bn_b_int}
       \bool_if:NT\g__bn_success_bool
