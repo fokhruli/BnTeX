@@ -80,6 +80,14 @@ def instrumentation(detail=False):
         else:
             body = rf'\__bne_enter:n{{{i}}}\use:c{{__bne_saved_{i}:}}'+args+r'\__bne_exit:'
         code += rf'\cs_set_protected:Npn\{name}'+params+'{'+body+'}\n'
+    if detail:
+        # Same phase as the generic matcher, including recursive observer state.
+        # Older installations simply lack this explicitly guarded entry point.
+        code += r"""\cs_if_exist:NT\__bn_match_mark_pair:nnnnnn
+ {\cs_new_eq:NN\__bne_saved_mark_pair:nnnnnn\__bn_match_mark_pair:nnnnnn
+  \cs_set_protected:Npn\__bn_match_mark_pair:nnnnnn#1#2#3#4#5#6
+   {\__bne_enter:n{12}\__bne_saved_mark_pair:nnnnnn{#1}{#2}{#3}{#4}{#5}{#6}\__bne_exit:}}
+"""
     return code+r'\ExplSyntaxOff'+'\n'
 
 

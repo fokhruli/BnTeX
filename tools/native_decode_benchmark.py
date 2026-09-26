@@ -46,20 +46,26 @@ def make_source(kind: str, pages: int, memo: bool):
         spec.update(workload='Distinct four-component strings; no digits; not dictionary words.',
                     source_sha256=perf.sha(src.encode()),mode=kind)
         return src,spec,words
-    if kind != 'prose':
+    if kind not in ('prose', 'varied-prose'):
         raise ValueError('unknown fixture')
+    passages = [PROSE]
+    if kind == 'varied-prose':
+        data = json.loads((Path(__file__).resolve().parents[1]/'examples/benchmark-prose-v1.json').read_text(encoding='utf8'))
+        passages = data['paragraphs']
+        if data['schema'] != 1 or len(passages) != 10 or any(type(t) is not str or not t or len(t.encode('utf8')) > 4096 or any(c in t for c in '{}\\%') for t in passages):
+            raise ValueError('invalid bounded literal prose fixture')
     lines = [r'\documentclass[11pt]{article}',r'\usepackage[margin=25mm]{geometry}',r'\usepackage{bntex-native}']
     if memo:
         lines.append(r'\usepackage{bntex-native-memo}')
     lines += [r'\BnTeXNativeLoadProfile{bntex-native-profile.tex}',r'\begin{document}',
               r'\ifnum\pdfshellescape=0\else\errmessage{shell enabled}\fi',r'\raggedright']
-    for _ in range(pages):
-        lines += [r'\noindent\bnNative{'+PROSE+r'}\clearpage']
+    for i in range(pages):
+        lines += [r'\noindent\bnNative{'+passages[i % len(passages)]+r'}\clearpage']
     lines.append(r'\end{document}')
-    src='\n'.join(lines)+'\n'; words=PROSE.split()*pages
+    src='\n'.join(lines)+'\n'; words=[w for i in range(pages) for w in passages[i % len(passages)].split()]
     spec={'pages_requested':pages,'token_occurrences':len(words),'distinct_tokens':len(set(words)),
           'source_sha256':perf.sha(src.encode()),'mode':kind,'memo_enabled':memo,
-          'workload':'Original authored prose fixture repeated per page; not corpus-derived or independent user acceptance.'}
+          'workload':('Ten different authored paragraphs, cycling only beyond ten pages; not reviewed or representative book prose.' if kind == 'varied-prose' else 'Original authored prose fixture repeated per page; not corpus-derived or independent user acceptance.')}
     return src,spec,words
 
 
@@ -147,7 +153,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--baseline',type=Path,required=True);p.add_argument('--candidate',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True);p.add_argument('--pages',type=int,nargs='+',choices=(1,10,100),default=[1,10])
-    p.add_argument('--kinds',nargs='+',choices=('distinct','repeated','digits-free','prose'),default=['distinct'])
+    p.add_argument('--kinds',nargs='+',choices=('distinct','repeated','digits-free','prose','varied-prose'),default=['distinct'])
     p.add_argument('--repetitions',type=int,choices=range(1,6),default=3)
     p.add_argument('--memo',action='store_true');p.add_argument('--timeout',type=float,default=600)
     p.add_argument('--probe',action='store_true')

@@ -119,6 +119,23 @@ def entry_glyphs(subtable: dict) -> tuple[int, ...]:
     return tuple(sorted(set(glyphs)))
 
 
+def mark_pair_declaration(rule: int, lookup: int, flags: int, glyphs) -> str | None:
+    """Compile ONLY two-input IgnoreMarks ligatures; never a document word.
+
+    The runtime dispatch additionally requires manual join-control mode. Under
+    this guard the sole skip predicate is the font's static IgnoreMarks table.
+    The generic matcher remains authoritative for every other lookup form.
+    """
+    if flags != 8 or len(glyphs) != 2:
+        return None
+    numbers = (rule, lookup, *glyphs)
+    if any(type(n) is not int or not 0 <= n <= 65535 for n in numbers):
+        raise ValueError('Invalid generated matcher index')
+    a, b = glyphs
+    return (rf'\cs_gset_protected:cpn {{__bnp_r_{rule}_mark_pair}}#1#2#3'
+            rf'{{\__bn_match_mark_pair:nnnnnn{{#1}}{{{a}}}{{{b}}}{{{lookup}}}{{#2}}{{#3}}}}')
+
+
 def emit_tables(p:dict)->bytes:
     """Internal ASCII table serializer, called only after an exact profile hash check."""
     lines=['% BnTeX native profile ABI 1. Installation data; no vocabulary.',r'\ExplSyntaxOn']
@@ -255,6 +272,30 @@ def emit_tables(p:dict)->bytes:
     return ('\n'.join(lines)+'\n').encode('ascii')
 
 
+
+def emit_matchers(p: dict) -> bytes:
+    """Emit separate font-derived code without changing the original rule tables.
+
+    Rule IDs use exactly the ligature traversal in emit_tables. The input is an
+    already fingerprint-verified profile, not document text or a word cache.
+    """
+    lines = ['% Fixed-profile IgnoreMarks pair matchers; no document vocabulary.',
+             r'\ExplSyntaxOn',
+             r'\cs_if_exist:NF\__bn_match_mark_pair:nnnnnn{\__bn_fail:n{matching~pair~runtime~required}}']
+    rule = 0
+    for lookup in p['gsub']:
+        for subtable in lookup['subtables']:
+            if subtable['kind'] != 'ligature':
+                continue
+            for glyphs, _ in subtable['entries']:
+                rule += 1
+                declaration = mark_pair_declaration(rule, lookup['index'], lookup['flags'], glyphs)
+                if declaration is not None:
+                    lines.append(declaration)
+    lines += [r'\ExplSyntaxOff', r'\endinput']
+    return ('\n'.join(lines)+'\n').encode('ascii')
+
+
 def export(profile_path:Path,font_path:Path,out:Path)->dict:
     if profile_path.stat().st_size>8*1024*1024:raise ValueError('Profile too large')
     raw=profile_path.read_bytes()
@@ -262,7 +303,7 @@ def export(profile_path:Path,font_path:Path,out:Path)->dict:
     if font_path.stat().st_size>64*1024*1024 or hashlib.sha256(font_path.read_bytes()).hexdigest()!=FONT_SHA:raise ValueError('Wrong font binary')
     if out.exists() or out.is_symlink():raise ValueError('Output must not exist')
     if any(p.is_symlink() for p in (out,*out.parents)):raise ValueError('Symlink output path rejected')
-    p=json.loads(raw);tables=emit_tables(p)
+    p=json.loads(raw);tables=emit_tables(p);matchers=emit_matchers(p)
     from .build import inspect_font,_write_banks
     from importlib.resources import files
     source_root=Path(__file__).resolve().parents[2]/'tex'/'latex'/'bntex'
@@ -278,6 +319,7 @@ def export(profile_path:Path,font_path:Path,out:Path)->dict:
         if hashlib.sha256((stage/meta['prepared_font_filename']).read_bytes()).hexdigest()!=FONT_SHA:raise ValueError('Font changed during installation')
         for name,body in resources.items():(stage/name).write_bytes(body)
         (stage/'bntex-native-tables.def').write_bytes(tables)
+        (stage/'bntex-native-matchers.def').write_bytes(matchers)
         checks=[]
         for path in sorted(stage.iterdir()):
             if path.suffix=='.pl':path.unlink();continue
@@ -285,10 +327,10 @@ def export(profile_path:Path,font_path:Path,out:Path)->dict:
         prefix='bnf'+FONT_SHA[:16]
         loader=['% Trusted installation manifest; MD5 detects accidental drift, not authentication.',*checks,*maplines,
                 r'\ExplSyntaxOn',r'\cs_gset:Npn \__bn_font_prefix: {'+prefix+'}',r'\ExplSyntaxOff',
-                r'\input{bntex-native-tables.def}',r'\BnTeXNativeProfileReady{1}{'+FONT_SHA+'}{'+PROFILE_SHA+'}',r'\endinput']
+                r'\input{bntex-native-tables.def}',r'\input{bntex-native-matchers.def}',r'\BnTeXNativeProfileReady{1}{'+FONT_SHA+'}{'+PROFILE_SHA+'}',r'\endinput']
         (stage/'bntex-native-profile.tex').write_text('\n'.join(loader)+'\n',encoding='ascii')
         manifest={'abi':ABI,'font_sha256':FONT_SHA,'profile_sha256':PROFILE_SHA,'tables_sha256':hashlib.sha256(tables).hexdigest(),
-          'table_bytes':len(tables),'glyph_count':p['glyph_count'],'vocabulary':None,'files':{f.name:hashlib.sha256(f.read_bytes()).hexdigest() for f in sorted(stage.iterdir())}}
+          'table_bytes':len(tables),'matchers_sha256':hashlib.sha256(matchers).hexdigest(),'matcher_bytes':len(matchers),'glyph_count':p['glyph_count'],'vocabulary':None,'files':{f.name:hashlib.sha256(f.read_bytes()).hexdigest() for f in sorted(stage.iterdir())}}
         (stage/'native-installation.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')
         stage.rename(out)
     return manifest
