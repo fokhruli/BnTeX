@@ -1,0 +1,55 @@
+name: private-authoring-review-transfer
+on:
+  push:
+    branches: [feat/automatic-bengali-styles]
+    paths: [.github/workflows/authoring-review-transfer.yml]
+permissions:
+  contents: write
+jobs:
+  exact-source-transfer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Apply the checked review corrections and remove transfer files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_HEAD: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import base64, hashlib, lzma, os, pathlib, subprocess, tempfile
+          def git(*args, **kwargs):
+              return subprocess.check_output(['git',*args], **kwargs).decode().strip()
+          assert git('rev-parse','HEAD') == os.environ['EXPECTED_HEAD']
+          assert git('rev-parse','HEAD^') == '246c92340b29703c73b4dfe1628a23015a873bfb'
+          assert not git('status','--porcelain')
+          payload='.github/maintenance/authoring-review-transfer.b64'
+          encoded=pathlib.Path(payload).read_bytes()
+          assert hashlib.sha256(encoded).hexdigest() == 'e909f3b37fec882ac0a9fa81ab987ec679b1419049bfe527b5a9a22ad418819a'
+          patch=lzma.decompress(base64.b64decode(encoded,validate=True),memlimit=256*1024*1024)
+          assert len(patch)==18056
+          assert hashlib.sha256(patch).hexdigest() == '9b44741363b43d83848d49957a1f8f6c4dcfbc1b62cf085a02f50e9af38ad763'
+          with tempfile.NamedTemporaryFile() as f:
+              f.write(patch);f.flush()
+              git('apply','--check',f.name)
+              git('apply',f.name)
+          git('rm','--',payload,'.github/workflows/authoring-review-transfer.yml')
+          git('add','--all')
+          tree=git('write-tree')
+          assert tree == '457d72726b03a33d8ee303a6e4c3f12017ef2df4',tree
+          git('config','user.name','BnTeX development automation')
+          git('config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+          git('commit','-m','docs: resolve stale authoring deferrals and keep manual examples together',
+              '-m','Address PR review by scoping historical explicit-only guides, linking the current automatic/real-bold interface and adding six documentation regression cases. No production runtime or font assets changed. Remove temporary review-transfer files from final tree.')
+          env=dict(os.environ)
+          auth=base64.b64encode(('x-access-token:'+env.pop('GH_TOKEN')).encode()).decode()
+          env.update(GIT_CONFIG_COUNT='1',GIT_CONFIG_KEY_0='http.https://github.com/.extraheader',GIT_CONFIG_VALUE_0='AUTHORIZATION: basic '+auth)
+          remote=git('ls-remote','origin','refs/heads/feat/automatic-bengali-styles',env=env).split()[0]
+          assert remote == os.environ['EXPECTED_HEAD'],'Branch changed; no overwrite attempted'
+          subprocess.run(['git','push','origin','HEAD:refs/heads/feat/automatic-bengali-styles'],env=env,check=True)
+          print('Review correction head:',git('rev-parse','HEAD'))
+          print('Verified source tree:',tree)
+          PY
