@@ -1,0 +1,24 @@
+name: private-installable-source-transfer
+on:
+  push:
+    branches: [feat/installable-distribution]
+    paths:
+      - '.github/maintenance/installable-transfer.*'
+      - '.github/workflows/installable-source-transfer.yml'
+permissions:
+  contents: write
+jobs:
+  transfer:
+    if: github.repository == 'fokhruli/BnTeX' && github.event.repository.private == true && github.ref == 'refs/heads/feat/installable-distribution'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Apply only the exact locally tested source tree
+        if: hashFiles('.github/maintenance/installable-transfer.py') != ''
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python .github/maintenance/installable-transfer.py
