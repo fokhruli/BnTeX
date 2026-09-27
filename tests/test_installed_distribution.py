@@ -121,7 +121,7 @@ def test_verified_full_paths_do_not_load_local_font_shadow(tds,tmp_path):
     assert 'বাংলা আমাদের মাতৃভাষা।' in text(folder)
 
 
-def restrictive_checksum_probe(tree, folder):
+def checksum_probe(tree, folder, *, read_policy):
     """Measure the engine primitive before testing the package under that policy.
 
     This does not infer capabilities from a release number or accept an arbitrary
@@ -134,7 +134,7 @@ def restrictive_checksum_probe(tree, folder):
         name='$TEXMFHOME/'+str(path.relative_to(tree))
         lines.append(r'\typeout{BNTEX-READ|'+str(i)+r'|\pdfmdfivesum file{'+name+'}}')
     lines.append(r'\end{document}')
-    rc,log=run(tree,folder,'\n'.join(lines),read_policy='p')
+    rc,log=run(tree,folder,'\n'.join(lines),read_policy=read_policy)
     assert rc==0,log[-4000:]
     observed=dict((int(i),value) for i,value in re.findall(r'BNTEX-READ\|(\d+)\|([0-9A-F]*)',log))
     assert set(observed)==set(range(len(assets)))
@@ -143,25 +143,44 @@ def restrictive_checksum_probe(tree, folder):
     return all(observed.values()),log.splitlines()[0]
 
 
+def diagnostic_text(log):
+    """Normalize LaTeX message wrapping, not its diagnostic meaning."""
+    unwrapped=re.sub(r'(?m)^\(bntex-native\)[ \t]*','',log)
+    return ' '.join(unwrapped.split())
+
+
+def test_diagnostic_matching_preserves_error_and_asset_identity():
+    wrapped=('Native Bengali shaping rejected: installed\n'
+             '(bntex-native)                      asset changed:\n'
+             '(bntex-native)                 fonts/test.ttf.')
+    normalized=diagnostic_text(wrapped)
+    assert 'installed asset changed: fonts/test.ttf' in normalized
+    assert 'installed asset unreadable:' not in normalized
+    assert 'installed asset changed: fonts/other.ttf' not in normalized
+    assert 'installed asset changed:' not in diagnostic_text('Undefined control sequence')
+
+
+@pytest.mark.parametrize('read_policy',[None,'p'])
 @pytest.mark.parametrize('suffix',['.ttf','.tfm','.enc'])
-def test_restrictive_read_policy_matches_primitive_without_relaxation(tds,tmp_path,suffix):
-    readable,banner=restrictive_checksum_probe(tds,tmp_path/'probe')
-    rc,log=run(tds,tmp_path/'doc',read_policy='p')
-    print(f'BNTEX-READ-POLICY|p|readable={readable}|{banner}')
+def test_read_policy_matches_primitive_without_relaxation(tds,tmp_path,suffix,read_policy):
+    readable,banner=checksum_probe(tds,tmp_path/'probe',read_policy=read_policy)
+    rc,log=run(tds,tmp_path/'doc',read_policy=read_policy)
+    print(f'BNTEX-READ-POLICY|{read_policy or "default"}|readable={readable}|{banner}')
     if readable:
-        # TeX Live 2023 in CI allows these paths. Verify real rendering AND
-        # corruption rejection rather than demanding a version-specific error.
+        # Validate rendering and the specific corrupted-asset diagnostic on
+        # every readable policy. LaTeX can wrap error text even when the engine
+        # max_print_line is high; unrelated failures must never count as a pass.
         assert rc==0,log[-8000:]
         assert 'বাংলা আমাদের মাতৃভাষা।' in text(tmp_path/'doc')
         tree=tmp_path/'damaged';shutil.copytree(tds,tree)
         name='bnf'+FONT_SHA[:16]+('' if suffix=='.ttf' else 'b0')+suffix
         path=tree/d.tds_path(name);path.write_bytes(path.read_bytes()+b'corrupt')
-        rc,log=run(tree,tmp_path/'damaged-doc',read_policy='p')
-        assert rc!=0 and 'installed asset changed:' in log
+        rc,log=run(tree,tmp_path/'damaged-doc',read_policy=read_policy)
+        assert rc!=0,log[-8000:]
+        assert 'installed asset changed: '+d.tds_path(name) in diagnostic_text(log),log[-8000:]
         assert not (tmp_path/'damaged-doc/main.pdf').exists()
     else:
-        # The locally tested newer primitive refuses these symbolic paths.
-        assert rc!=0 and 'read-policy' in log
+        assert rc!=0 and 'read-policy' in log,log[-8000:]
         assert not (tmp_path/'doc/main.pdf').exists()
     code=(ROOT/'tex/latex/bntex/bntex-distribution.sty').read_text()
     assert 'write18' not in code and 'openin_any=' not in code
