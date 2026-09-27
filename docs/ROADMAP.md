@@ -5,7 +5,7 @@ The original bootstrap roadmap is preserved byte-for-byte as
 Current engineering work uses main as the integration base and topic PRs for
 changes. This is a private alpha; no public release has been authorized.
 
-## Implemented on main
+## Implemented baseline and current authoring work
 
 Consolidation PR #16 preserved the corpus, expanded inventory, decoder,
 independent Python model, native expl3 shaper and document integration ancestry.
@@ -13,11 +13,12 @@ Performance PR #17 adds indexed rule dispatch and integer coordinate scaling.
 The complete pinned performance suite passed 551 tests without skips before
 merge. These are distinct from earlier reconstructed local subsets.
 
-One fixed regular-upright Bengali profile supports new text without document
-preparation. The cached `bntex.sty` interface remains available and still needs
-new-word preparation. Explicit native text declarations support moving/PDF
-arguments. Optional bounded reuse is process-local, never a word dictionary
-required by the algorithm.
+The original native baseline supports one regular-upright profile without
+per-document preparation. Current authoring extends that baseline with automatic
+`bntex-auto` input and an audited regular/bold family; see AUTOMATIC-AUTHORING.md.
+The cached `bntex.sty` interface still needs new-word preparation. Explicit native
+text declarations remain available for legacy moving/PDF arguments. Optional
+bounded reuse is process-local and face-aware, never a required word dictionary.
 
 ## Issue #7 remains an acceptance milestone
 

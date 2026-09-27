@@ -6,7 +6,7 @@
 \usepackage{xurl}
 \usepackage[unicode,hidelinks]{hyperref}
 \usepackage{fancyvrb}
-\DefineVerbatimEnvironment{Code}{Verbatim}{fontsize=\small,frame=single,framesep=6pt}
+\DefineVerbatimEnvironment{Code}{Verbatim}{fontsize=\small,frame=single,framesep=6pt,samepage=true}
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\textsf{BnTeX / Developer alpha}}
@@ -15,14 +15,14 @@
 \fancyfoot[R]{\thepage}
 \setlength{\headheight}{14pt}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{5pt}
+\setlength{\parskip}{4pt}
 \hypersetup{pdftitle={BnTeX developer manual},pdfauthor={BnTeX contributors}}
 \begin{document}
 \raggedright
 {\LARGE\bfseries BnTeX developer manual}\par
 {\large Native Bengali in pdfLaTeX}\par
 \textbf{Status: private development alpha.} This is documentation for the
-consolidated implementation and performance patch, not a CTAN release. The
+automatic-authoring implementation, not a CTAN release. The
 Python preparer version remains \texttt{0.1.0a2}; individual experimental TeX
 modules have their own version strings. No font files accompany the sources.
 
@@ -50,9 +50,9 @@ Use a clean checkout, Python 3.10 or later, FontTools and a TeX distribution wit
 FontTools 4.63.0 and HarfBuzz 10.2.0 reference environment. HarfBuzz belongs to
 the cached preparation/test path, not native document execution.
 
-Supply a separately installed font whose SHA-256 is exactly:\par
+The required regular font has SHA-256:\par
 {\small\path{32b4aeb731e3819d7a31216c885208a96e402ceeebb30fc39723b99220708fef}}\par
-The supported typed profile hash is:\par
+Its supported typed profile hash is:\par
 {\small\path{f6294540099a3b6f622f2cdd9e863050390f75fd0576495d5a2316903f8cfb42}}
 
 \begin{Code}

@@ -355,3 +355,18 @@ def test_capability_template_uses_automatic_authoring():
     assert r'\textbf{নতুনবাংলাশব্দ}' in source
     assert r'\textit{নতুনবাংলাশব্দ}' in source
     assert 'synthetic-italic' in source
+
+
+@pytest.mark.parametrize("path", [
+    "CONTRIBUTING.md", "BNTEX_DEVELOPMENT_PLAN.md", "docs/ROADMAP.md",
+    "docs/NATIVE-INTEGRATION.md", "docs/RELEASE-READINESS.md",
+    "docs/OVERLEAF-NATIVE.md",
+])
+def test_current_guides_link_implemented_automatic_authoring(path):
+    text=(ROOT/path).read_text(encoding="utf-8")
+    assert "AUTOMATIC-AUTHORING.md" in text
+    assert "bntex-auto" in text
+    for obsolete in ("routing is deferred under #15", "remains deferred in issue #15",
+                     "Issue #15 is still deferred", "wrapper-free input remains deferred",
+                     "Automatic script detection | Deferred, not implemented"):
+        assert obsolete not in text
