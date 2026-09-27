@@ -43,7 +43,7 @@ The font installation was completed before these words were introduced.
     return intro + '\\end{document}\n'
 
 
-def gate(installation: Path, out: Path, font: Path):
+def gate(installation: Path, out: Path, font: Path, *, build_document=document, reference=None):
     if not hasattr(os, 'chroot'): raise RuntimeError('Linux/POSIX chroot is required.')
     if out.exists() or out.is_symlink(): raise ValueError('Result directory must not exist.')
     manifest=json.loads((installation/'native-installation.json').read_text())
@@ -61,7 +61,7 @@ def gate(installation: Path, out: Path, font: Path):
     with tempfile.TemporaryDirectory(prefix='bntex-chroot-') as temp:
         base=Path(temp);prime=base/'prime';prime.mkdir()
         for name in manifest['files']:shutil.copy2(installation/name,prime/name)
-        (prime/'main.tex').write_text(document(['বাংলা','ক্ষ','স্বাস্থ্য','০১২৩৪৫৬৭৮৯']),encoding='utf-8')
+        (prime/'main.tex').write_text(build_document(['বাংলা','ক্ষ','স্বাস্থ্য','০১২৩৪৫৬৭৮৯']),encoding='utf-8')
         env=dict(os.environ,PATH='/no-executables',TEXINPUTS='.:',max_print_line='10000',
                  MKTEXPK='0',MKTEXTFM='0',SOURCE_DATE_EPOCH='1',FORCE_SOURCE_DATE='1')
         command=[str(exe),'-no-shell-escape','-halt-on-error','-interaction=nonstopmode','-recorder','main.tex']
@@ -91,7 +91,7 @@ def gate(installation: Path, out: Path, font: Path):
         words=['অণুজীবপ্রযুক্তিগত','পুনর্বিন্যাসসমূহ','শিক্ষকসম্মেলনের','দূরনিয়ন্ত্রণযোগ্যতা',
                'মহাকাশপ্রযুক্তিবিষয়ক','ত্রিমাত্রিকীকরণসমূহ','কো কো','ক্\u200dষ ক্\u200cষ','ড় ড়']
         before={name:digest(work/name) for name in manifest['files']}
-        (work/'main.tex').write_text(document(words),encoding='utf-8')
+        (work/'main.tex').write_text(build_document(words),encoding='utf-8')
         def enter_root():
             os.chroot(jail);os.chdir('/work')
         t0=time.monotonic()
@@ -109,10 +109,14 @@ def gate(installation: Path, out: Path, font: Path):
             if line.startswith('CASE|'):actual.append([])
             elif line.startswith('BNTEX-GLYPH|'):actual[-1].append(list(map(int,line.split('|')[1:])))
         # The independent reference is executed OUTSIDE the root, after pdfTeX exits.
-        from bntex.harfbuzz import HarfBuzz
-        with HarfBuzz(font) as hb:
-            if hb.version!='10.2.0':raise RuntimeError('Exact post-run reference requires HarfBuzz 10.2.0.')
-            expected=[[list(asdict(g).values()) for g in hb.shape(t)] for t in words]
+        if reference is None:
+            from bntex.harfbuzz import HarfBuzz
+            with HarfBuzz(font) as hb:
+                if hb.version!='10.2.0':raise RuntimeError('Exact post-run reference requires HarfBuzz 10.2.0.')
+                expected=[[list(asdict(g).values()) for g in hb.shape(t)] for t in words]
+        else:
+            # Trusted development callback, invoked only AFTER the root exits.
+            expected=reference(words)
         if actual!=expected:raise RuntimeError('Native output differs from the pinned reference.')
         if before!={name:digest(work/name) for name in before}:raise RuntimeError('Installation changed during compilation.')
         extracted=subprocess.check_output(['pdftotext','-enc','UTF-8',str(work/'main.pdf'),'-']).decode()

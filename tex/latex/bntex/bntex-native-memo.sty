@@ -55,8 +55,8 @@
    \bool_if:nTF{\g__bnm_enabled_bool && !\g__bn_trace_bool}
     {\group_begin:
      % Exact original bytes, not MD5 and not normalized text. One immutable
-     % profile/configuration per document; no size/color in this glyph-unit IR.
-     \tl_set:Nx\l__bnm_key_tl{\pdfescapehex{\detokenize{#1}}}
+     % face/configuration in the optional identity hook; no size/color/slant in this glyph-unit IR.
+     \tl_set:Nx\l__bnm_key_tl{\__bn_memo_identity:\pdfescapehex{\detokenize{#1}}}
      \prop_get:NVNTF\g__bnm_runs_prop\l__bnm_key_tl\l__bnm_run_tl
        {\int_gincr:N\g__bnm_hits_int\tl_use:N\l__bnm_run_tl}
        {\int_gincr:N\g__bnm_misses_int\__bn_shape_word:n{#1}\__bnm_store:}

@@ -15,10 +15,13 @@ source/resource pair must stay identical. A skipped integration/reference test
 is not passing typography evidence. Record complete CI separately from local
 subsets. Keep benchmark input/budget identities and failures visible.
 
-The cached frontend remains literal, not a general TeX parser. The native
-frontend also rejects input macros and unsupported styles. Automatic Bengali
-routing is deferred under #15. Check headings/PDF strings, scope restoration,
-word boundaries and original text extraction whenever rendering is changed.
+The cached frontend remains literal, not a general TeX parser. Explicit native
+spans also reject input macros and unsupported styles. Current `bntex-auto`
+authoring instead routes connected Bengali without language wrappers, while
+leaving surrounding LaTeX commands alone. See `docs/AUTOMATIC-AUTHORING.md` for
+issues #15/#25, real-bold support and opt-in synthetic slant. Check moving/PDF
+arguments, scope restoration, command/word boundaries and original text extraction
+whenever routing or rendering changes. Historical deferrals are not current tasks.
 
 No font binaries, generated installation files, credentials or build trees may
 be committed. Keep the original and third-party licenses intact. Public releases,

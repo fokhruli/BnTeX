@@ -1,3 +1,15 @@
+# Authoring update (unreleased)
+
+- Add opt-in `bntex-auto`: literal Bengali in ordinary mixed text, commands,
+  headings and PDF strings without per-passage wrappers.
+- Add the exact Noto Serif Bengali Bold profile and NFSS weight selection.
+  Shared substitutions are structurally checked; bold metrics/positioning are
+  independent. Reuse keys include the full face identity.
+- Add explicit synthetic-italic consent and standard decoration regressions.
+  No genuine italic face, generic font support or Overleaf certification claimed.
+- Record prior regular-specimen acceptance narrowly; new styles need review.
+- The maintainer has activated #15/#25; the earlier deferral is superseded.
+
 # Changelog
 
 ## Unreleased — consolidated native development checkpoint

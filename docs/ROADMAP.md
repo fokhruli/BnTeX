@@ -5,7 +5,7 @@ The original bootstrap roadmap is preserved byte-for-byte as
 Current engineering work uses main as the integration base and topic PRs for
 changes. This is a private alpha; no public release has been authorized.
 
-## Implemented on main
+## Implemented baseline and current authoring work
 
 Consolidation PR #16 preserved the corpus, expanded inventory, decoder,
 independent Python model, native expl3 shaper and document integration ancestry.
@@ -13,11 +13,12 @@ Performance PR #17 adds indexed rule dispatch and integer coordinate scaling.
 The complete pinned performance suite passed 551 tests without skips before
 merge. These are distinct from earlier reconstructed local subsets.
 
-One fixed regular-upright Bengali profile supports new text without document
-preparation. The cached `bntex.sty` interface remains available and still needs
-new-word preparation. Explicit native text declarations support moving/PDF
-arguments. Optional bounded reuse is process-local, never a word dictionary
-required by the algorithm.
+The original native baseline supports one regular-upright profile without
+per-document preparation. Current authoring extends that baseline with automatic
+`bntex-auto` input and an audited regular/bold family; see AUTOMATIC-AUTHORING.md.
+The cached `bntex.sty` interface still needs new-word preparation. Explicit native
+text declarations remain available for legacy moving/PDF arguments. Optional
+bounded reuse is process-local and face-aware, never a required word dictionary.
 
 ## Issue #7 remains an acceptance milestone
 
@@ -38,16 +39,22 @@ font/profile distribution and publication decisions. CTAN packaging still needs
 final naming/layout review and removal of private-development references before
 any public submission. No package, tag or public release is created by preflight.
 
-## Deferred issue #15
+## Active authoring milestone: #15 and #25
 
-Wrapper-free automatic Bengali input is a recorded product requirement, not the
-current coding task. Revisit it after the pending backlog with the maintainer.
-Keep explicit `\bnNative` available and retain no-helper, original-Unicode and
-Latin-compatibility regressions when an automatic dispatcher is eventually added.
+The maintainer explicitly superseded the earlier deferral. `bntex-auto` routes
+connected Unicode Bengali without per-passage wrappers. The authoring exporter
+installs the two audited regular/bold faces; standard NFSS weight switches select
+real bold. Synthetic slanted emphasis is an explicit option, not a true italic
+face. Standard effects and ordinary LaTeX contexts have separate regression
+coverage. See AUTOMATIC-AUTHORING.md for the exact implemented support matrix.
+Historical statements that routing is deferred are preserved in dated reports,
+not instructions overriding the current request. Performance and external user
+acceptance remain open; do not require another micro-optimization before useful
+authoring tests. No public release is authorized by this priority change.
 
 ## Subsequent scope, not current claims
 
-Reviewed bold/sans/other font profiles, stronger line-break policy, supported
+Additional sans/true-italic/other font profiles, stronger line-break policy, supported
 publisher classes, additional platforms/viewers and tagged-PDF accessibility each
 need separate specifications and tests. Passing a fixed font or Poppler does not
 establish any of these. Existing human-review records must retain real attribution.

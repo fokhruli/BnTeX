@@ -1,0 +1,3 @@
+# Trusted project-local latexmk configuration. No external shaping helper.
+$pdf_mode = 1;
+$pdflatex = 'pdflatex %O -no-shell-escape -halt-on-error %S';

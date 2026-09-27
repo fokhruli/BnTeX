@@ -115,11 +115,16 @@
     \seq_put_right:Nx\l_bntex_utfviii_offsets_seq{\int_use:N\l__bn_span_at_int}
     \seq_put_right:Nx\l_bntex_utfviii_lengths_seq{\int_use:N\l__bntex_utfviii_width_int}
     \int_add:Nn\l__bn_span_at_int{\l__bntex_utfviii_width_int}}}
+% Default contract remains regular/upright. Optional authoring styles override
+% this hook locally, before decoding, and supply a complete glyph-unit identity.
+\cs_new_protected:Npn\__bn_select_style:
+ {\str_if_eq:eeF{\f@series}{m}{\__bn_fail:n{only~regular~weight~is~implemented;~use~mdseries~explicitly}}
+  \str_if_eq:eeF{\f@shape}{n}{\__bn_fail:n{only~upright~shape~is~implemented}}}
+\cs_new:Npn\__bn_memo_identity:{}
 \NewDocumentCommand\bnNative{+m}
  {\group_begin:
   \mode_if_math:T{\__bn_fail:n{use~native~Bengali~in~text~mode}}
-  \str_if_eq:eeF{\f@series}{m}{\__bn_fail:n{only~regular~weight~is~implemented;~use~mdseries~explicitly}}
-  \str_if_eq:eeF{\f@shape}{n}{\__bn_fail:n{only~upright~shape~is~implemented}}
+  \__bn_select_style:
   \int_zero:N\l__bn_span_at_int\int_zero:N\l__bn_span_count_int
   \cs_set_eq:NN\__bn_span_saved_emit:\__bntex_utfviii_emit:
   \cs_set_eq:NN\__bntex_utfviii_emit:\__bn_span_collect:

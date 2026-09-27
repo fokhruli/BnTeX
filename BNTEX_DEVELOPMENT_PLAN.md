@@ -1,16 +1,26 @@
 # BnTeX development plan — navigation
 
-The maintained plan is split into focused documents rather than duplicated in one
-large generated file. Read in this order:
+Current entry points take precedence over the dated bootstrap snapshot:
 
-1. [Architecture](docs/ARCHITECTURE.md): cached glyph backend and renderer protocol.
-2. [Native shaper](docs/NATIVE_SHAPER.md): fixed-font compiler/model/expl3 design.
-3. [Profile audit](docs/PROFILE_AUDIT.md): implemented dependency-closure audit.
-4. [Roadmap](docs/ROADMAP.md): staged acceptance gates and remaining tasks.
-5. [Learning](docs/LEARNING.md): references and practical exercises.
-6. [Overleaf](docs/OVERLEAF.md): current prepare-then-compile workflow.
-7. [CTAN](docs/CTAN.md): future packaging and release gates.
-8. [Testing](docs/TESTING.md) and [current validation](docs/BOOTSTRAP-VALIDATION.md).
+1. [Automatic authoring](docs/AUTOMATIC-AUTHORING.md): wrapper-free `bntex-auto`,
+   audited regular/bold fonts, standard formatting and declared synthetic slant.
+2. [Roadmap](docs/ROADMAP.md): current work and remaining acceptance gates.
+3. [Overleaf handoff](docs/OVERLEAF-NATIVE.md): project-local installation and the
+   still-pending actual browser/new-word-edit procedure.
+4. [Explicit integration](docs/NATIVE-INTEGRATION.md): optional legacy interfaces,
+   source manifests, memoization and their scoped historical measurements.
+5. [Release readiness](docs/RELEASE-READINESS.md): mechanical checks and unresolved
+   evidence; no CTAN/PyPI publication or visibility change is authorized.
 
-The original archive's full snapshot report is historical. This repository now
-exists at `fokhruli/BnTeX`; no CTAN/PyPI publication or visibility change is implied.
+Design and learning references:
+
+- [Architecture](docs/ARCHITECTURE.md), [native shaper design](docs/NATIVE_SHAPER.md)
+  and [profile audit](docs/PROFILE_AUDIT.md) document the implementation's origins.
+- [Learning](docs/LEARNING.md), [testing](docs/TESTING.md) and [CTAN](docs/CTAN.md)
+  provide exercises and review requirements.
+- [Bootstrap validation](docs/BOOTSTRAP-VALIDATION.md) and the original full plan
+  are historical; current results belong to the exact revision's PR/CI evidence.
+
+Issues #15 and #25 now prioritize automatic input and styles. Earlier deferrals
+do not override the maintainer's new request. The repository exists privately at
+`fokhruli/BnTeX`; fonts and public releases are not distributed by these guides.

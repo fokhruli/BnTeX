@@ -6,7 +6,7 @@
 \usepackage{xurl}
 \usepackage[unicode,hidelinks]{hyperref}
 \usepackage{fancyvrb}
-\DefineVerbatimEnvironment{Code}{Verbatim}{fontsize=\small,frame=single,framesep=6pt}
+\DefineVerbatimEnvironment{Code}{Verbatim}{fontsize=\small,frame=single,framesep=6pt,samepage=true}
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\textsf{BnTeX / Developer alpha}}
@@ -15,14 +15,14 @@
 \fancyfoot[R]{\thepage}
 \setlength{\headheight}{14pt}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{5pt}
+\setlength{\parskip}{4pt}
 \hypersetup{pdftitle={BnTeX developer manual},pdfauthor={BnTeX contributors}}
 \begin{document}
 \raggedright
 {\LARGE\bfseries BnTeX developer manual}\par
 {\large Native Bengali in pdfLaTeX}\par
 \textbf{Status: private development alpha.} This is documentation for the
-consolidated implementation and performance patch, not a CTAN release. The
+automatic-authoring implementation, not a CTAN release. The
 Python preparer version remains \texttt{0.1.0a2}; individual experimental TeX
 modules have their own version strings. No font files accompany the sources.
 
@@ -31,14 +31,17 @@ modules have their own version strings. No font files accompany the sources.
 \toprule
 Interface & Shaping & When preparation is needed\\
 \midrule
+\path{bntex-auto.sty} & Automatic Bengali input; native shaping & Once per audited regular/bold installation\\[4pt]
 \path{bntex.sty} / \texttt{\textbackslash bn} & Offline HarfBuzz word preparation & Whenever vocabulary or prepared styles change\\[4pt]
 \path{bntex-native.sty} / \texttt{\textbackslash bnNative} & Native expl3 rules executed by pdfTeX & Once per supported font/package installation; not for new words\\
 \bottomrule
 \end{tabularx}
 
-The native path currently supports one exact static Noto Serif Bengali Regular
-font, medium weight and upright shape. Surrounding Latin text and mathematics
-use normal LaTeX. Automatic Bengali detection without wrappers is deferred.
+The authoring path supports the exact static Noto Serif Bengali Regular and
+Bold fonts. Loading \texttt{bntex-auto} enables wrapper-free Bengali text, with
+standard LaTeX formatting. A genuine italic face is not supplied; slanted
+emphasis requires explicit synthetic-italic consent. Surrounding Latin text and
+mathematics use normal LaTeX. The earlier automatic-input deferral is superseded.
 Native shape execution has no Python, Lua, network or external-shaper call.
 
 \section{Install the supported font profile once}
@@ -47,20 +50,17 @@ Use a clean checkout, Python 3.10 or later, FontTools and a TeX distribution wit
 FontTools 4.63.0 and HarfBuzz 10.2.0 reference environment. HarfBuzz belongs to
 the cached preparation/test path, not native document execution.
 
-Supply a separately installed font whose SHA-256 is exactly:\par
+The required regular font has SHA-256:\par
 {\small\path{32b4aeb731e3819d7a31216c885208a96e402ceeebb30fc39723b99220708fef}}\par
-The supported typed profile hash is:\par
+Its supported typed profile hash is:\par
 {\small\path{f6294540099a3b6f622f2cdd9e863050390f75fd0576495d5a2316903f8cfb42}}
 
 \begin{Code}
 python -m pip install -e '.[test]' 'fonttools==4.63.0'
-python -m bntex.native compile \
-  --font /path/to/NotoSerifBengali-Regular.ttf \
-  --out build/native-profile.json
-python -m bntex.tex_export \
-  --profile build/native-profile.json \
-  --font /path/to/NotoSerifBengali-Regular.ttf \
-  --out build/native-installation
+python -m bntex.authoring_export \
+  --regular-font /path/to/NotoSerifBengali-Regular.ttf \
+  --bold-font /path/to/NotoSerifBengali-Bold.ttf \
+  --out build/authoring-installation
 \end{Code}
 All outputs must be new. The exporter takes font rules, not document vocabulary.
 After a package update, create a matching complete installation. Do not replace
@@ -72,40 +72,40 @@ manual, the angle-bracket text below is a placeholder: replace it with literal
 Unicode Bengali in the editable source.
 \begin{Code}
 \documentclass[12pt]{article}
-\usepackage{bntex-native}
+\usepackage[synthetic-italic]{bntex-auto}
 \BnTeXNativeLoadProfile{bntex-native-profile.tex}
 \begin{document}
 English text remains in the normal font.
-\par\bnNative{<literal Bengali sentence>}
+<literal Bengali sentence>
+\textbf{<literal Bengali sentence>}
 \[ x_{t+1}=f(x_t,u_t)+w_t. \]
 \end{document}
 \end{Code}
 Run \texttt{pdflatex -no-shell-escape -halt-on-error main.tex}. Add new Bengali
 words and run the same command again. Multiple ordinary LaTeX passes may still
 be needed for references and contents; these are not Bengali preparation passes.
-Keep LaTeX commands, English words and mathematics outside each literal Bengali
-span. Spaces within the span permit wrapping between word boxes. Intraword
-hyphenation is not implemented; individual spans are limited to 4,096 UTF-8 bytes.
+Ordinary Bengali, Latin and LaTeX commands may be mixed without language wrappers.
+Connected Bengali runs are shaped as units and stop at spaces/commands/braces.
+Each run is limited to 4,096 bytes; intraword hyphenation is not implemented.
+Raw Bengali in mathematics requires an ordinary amsmath \verb|\text{...}| command.
 
-\subsection{Headings, contents and PDF strings}
-Use explicit original-text declarations for moving arguments and metadata:
-\begin{Code}
-\usepackage{bntex-native-integration}
-\usepackage[unicode=true,pdfencoding=unicode]{hyperref}
-\BnTeXNativeDeclareText{intro}{<literal Bengali title>}
-\hypersetup{pdftitle={\BnTeXNativeText{intro}}}
-% In the document:
-\section{\BnTeXNativeRegularText{intro}}
-\end{Code}
-Declarations store original text, not shaped words. Body text does not need a
-declaration. The RegularText command explicitly selects medium upright type;
-it is not synthetic bold support. \verb|\BnTeXNativeText| inherits the current
-supported style. Keys are ASCII identifiers. Raw \verb|\bnNative| in a bookmark
-is outside this declared-text interface.
+\subsection{Styles and headings}
+\verb|\textbf| selects the actual bold font and its own metrics/positioning rules.
+The selected family has no true italic face. Only the explicit
+\texttt{synthetic-italic} option permits \verb|\textit| and \verb|\emph| to shear
+upright or bold output. Without it, italic requests are errors. Underline, color,
+size, and selected \texttt{ulem} effects have their own tests; arbitrary font
+families and effects are not implied.
+
+Literal Bengali may be used directly in \verb|\section| and hyperref PDF strings.
+The PDF-string path preserves original Unicode without running the typesetter.
+See \texttt{docs/AUTOMATIC-AUTHORING.md} for the support matrix and example. The
+explicit native and declared-text integration commands remain available for
+legacy documents and diagnostics; they are not required by automatic authoring.
 
 \subsection{Optional reuse within a compilation}
 Loading \texttt{bntex-native-memo} enables bounded in-memory reuse of successful
-glyph runs. New words still execute the shaper. Reuse writes no persistent word
+glyph runs, keyed by full face identity and original bytes. New words still execute the shaper. Reuse writes no persistent word
 file and applies current point size and color when drawing each occurrence.
 \verb|\BnTeXNativeMemoOff| disables and clears it;
 \verb|\BnTeXNativeMemoClear| clears statistics and entries;
@@ -114,7 +114,7 @@ The limit is 256 entries and 8,192 stored glyphs. Mostly distinct text may not
 benefit from this option.
 
 \section{Project-local installation and Overleaf}
-The explicit multi-file example uses \texttt{examples/native-project/project.json}.
+The explicit multi-file example uses \texttt{examples/automatic-authoring/project.json}.
 Stage it with \texttt{python -m bntex.native\_project stage}, supplying
 \texttt{--manifest}, \texttt{--installation} and a new \texttt{--out} directory.
 The \texttt{verify} command distinguishes editable source changes from immutable
@@ -158,10 +158,10 @@ Frozen reference rows must never be regenerated merely to make tests pass.
 Symptom & Action\\\midrule
 Wrong font/profile hash & Obtain the documented exact local font; do not edit hashes to bypass the check.\\[3pt]
 Missing or changed asset & Re-export and move the complete matching installation together.\\[3pt]
-Unsupported bold/italic & Request regular upright explicitly or leave the context unsupported.\\[3pt]
-Literal-input error & Move commands/math outside the Bengali span; inspect byte diagnostics.\\[3pt]
+Unsupported bold/italic & Install the audited bold face; use synthetic slant only with explicit consent or retain upright.\\[3pt]
+Literal-input error & Inspect byte diagnostics; keep raw Bengali out of math or use amsmath text.\\[3pt]
 Slow long document & Measure distinct/repeated workloads separately; optional reuse is not a cure for all new-word throughput.\\[3pt]
-Incorrect PDF string & Use declared-text integration; do not expand the shaping engine inside a bookmark.\\
+Incorrect PDF string & Check automatic hyperref integration or the legacy declared-text interface; never run shaping inside a bookmark.\\
 \bottomrule
 \end{tabularx}
 
@@ -190,7 +190,8 @@ visual review, performance expectations, naming, distribution rights and explici
 maintainer authorization. A mechanical packaging pass is not a CTAN submission.
 
 \section*{Primary guidance and source of truth}
-Implementation contracts are in \texttt{docs/NATIVE-TEX.md},
+Implementation contracts are in \texttt{docs/AUTOMATIC-AUTHORING.md},
+\texttt{docs/NATIVE-TEX.md},
 \texttt{docs/NATIVE-INTEGRATION.md} and the revision-specific validation reports.
 The original architecture roadmap is historical, not a current feature list.
 

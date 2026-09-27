@@ -2,6 +2,9 @@
 
 This is a review checkpoint, not a release or an upload authorization. The
 original cached backend and the experimental fixed-profile native path coexist.
+The automatic `bntex-auto` interface and audited regular/bold family are described
+in [AUTOMATIC-AUTHORING.md](AUTOMATIC-AUTHORING.md). The earlier automatic-input
+deferral is superseded; ordinary authoring no longer requires language wrappers.
 The package-name, font/profile distribution policy, browser reproduction,
 independent user, native visual review and long-document interaction target
 remain separately recorded in `RELEASE-READINESS.json`.
@@ -49,7 +52,8 @@ artifacts and does not create releases. Dry-run packages are not publication.
 ## Actual browser and second-user checks
 
 No Overleaf integration was available to this implementation session. No browser
-success or independent person is claimed. Use the staged native-project example,
+success or independent person is claimed. Use the staged automatic-authoring example
+from AUTOMATIC-AUTHORING.md (or the separately scoped legacy native-project example),
 its no-shell `latexmkrc`, the guide in `OVERLEAF-NATIVE.md`, and a new Overleaf
 project with pdfLaTeX selected. Record TeX Live version, source revision, log,
 PDF and installation identity, then add a word only after import and recompile.
@@ -71,5 +75,7 @@ Overleaf's compiler and TeX Live selections are project-specific settings:
 https://docs.overleaf.com/getting-started/recompiling-your-project/selecting-a-tex-live-version-and-latex-compiler
 
 The original roadmap remains design provenance. Current supported interfaces
-and unresolved gates are in README.md and the native documentation. Automatic
-wrapper-free input remains deferred; no public release is scheduled or authorized.
+and unresolved gates are in README.md and AUTOMATIC-AUTHORING.md. Wrapper-free
+input and standard styles are implemented with their documented limits; browser,
+new-style visual and independent-user acceptance remain separate. No public
+release is scheduled or authorized.

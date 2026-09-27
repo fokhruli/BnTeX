@@ -1,12 +1,16 @@
 # Native document integration: issue #7
 
-Experimental, explicit-command path on top of PR #14. Automatic Bengali routing
-remains deferred in issue #15. This work does not add fonts, bold/italic shaping,
-a word dictionary, a public release, or an Overleaf browser certification.
+This guide documents the explicit-command integration path introduced by PR #14
+and #16; its measured examples retain that scope. Current ordinary authoring
+uses `bntex-auto`, without Bengali-specific wrappers. See
+[AUTOMATIC-AUTHORING.md](AUTOMATIC-AUTHORING.md) for automatic routing, audited
+real bold and explicitly enabled synthetic slant. Issues #15 and #25 are active,
+not deferred. Neither interface implies a public release or Overleaf certification.
 
 ## Authoring interfaces
 
-Ordinary body text still uses `\bnNative{...}`. The optional integration package
+For the explicit-only interface shown here, body text uses `\bnNative{...}`.
+That wrapper is optional when using `bntex-auto`. The integration package
 adds a declaration for text that will travel through headings, auxiliary files,
 or PDF strings. It stores ORIGINAL TEXT, not prepared glyphs or a word cache.
 Each typesetting use still reaches the native shaper (or optional process-local
@@ -30,7 +34,8 @@ memoization). Body words do not have to be declared.
 silently replace bold or italic. `\BnTeXNativeRegularText{key}` explicitly selects
 medium upright Bengali locally; use it when the document class normally makes
 headings bold. Surrounding Latin styling is restored afterward. This is NOT
-Bengali bold support. Keys are 1--64 ASCII letters/digits/hyphens, starting with
+Bengali bold support by itself; the separate authoring family supplies real bold.
+Keys are 1--64 ASCII letters/digits/hyphens, starting with
 a letter. Duplicate/unknown keys and input macros are errors.
 
 Declaration validates literal UTF-8, not arbitrary linguistic correctness. The
@@ -49,10 +54,12 @@ No tagged-PDF structure, PDF/UA compliance, or all-viewer search behavior is imp
 
 The first 200-token repeated-text probe took about 21 seconds without reuse, so
 `bntex-native-memo.sty` is an opt-in optimization. It stores only successful
-positioned glyph runs in font units, keyed by exact ORIGINAL UTF-8 bytes. It does
-not store rendered boxes, point sizes, colors, normalized spellings or persistent
-files. One immutable supported font/configuration is permitted by the native
-loader. Current size and color are applied by the ordinary renderer on every use.
+positioned glyph runs in font units, keyed by exact ORIGINAL UTF-8 bytes plus
+full font identity when the style module is loaded. It does not store rendered
+boxes, point sizes, colors, normalized spellings or persistent files. The original
+regular-only loader supports one profile; the authoring exporter installs the
+separately audited regular/bold pair. Current size, color and any explicitly
+requested slant are applied by the renderer on every use.
 
 Controls: `\BnTeXNativeMemoOn`, `\BnTeXNativeMemoOff`,
 `\BnTeXNativeMemoClear`, `\BnTeXNativeMemoLimit{1..256}`, and
@@ -74,7 +81,7 @@ shape/render operation when the optional memo package is not loaded. Neither
 
 ## Reproduce the multi-file project
 
-Use a fresh checkout of the integration branch and the already documented exact
+For this legacy explicit example, use a fresh current checkout and the documented exact
 font (SHA-256 `32b4aeb731e3819d7a31216c885208a96e402ceeebb30fc39723b99220708fef`).
 The source distribution includes no font binaries. Install normal TeX tools,
 Poppler and the project's test extras for validation.
@@ -134,7 +141,7 @@ The tests assert these specific constructions, not general class compatibility:
 | BibTeX-generated title | Passed using declared regular text in a protected title |
 | Regular sizes/colors with memo hits | Glyph fields, dimensions, color operators and extraction checked |
 | Unrequested bold/italic | Expected rejection, not fallback |
-| Automatic script detection | Deferred, not implemented |
+| Automatic script detection | Separate implemented `bntex-auto` path; see AUTOMATIC-AUTHORING.md |
 | Additional fonts, arbitrary publishers, tagged PDF | Not certified |
 | Overleaf browser / second-user reproduction | Not performed |
 
@@ -169,5 +176,7 @@ from repeated text to distinct vocabulary. These are shared-host measurements,
 not controlled hardware performance guarantees.
 
 Issue #7 remains open for actual Overleaf testing, second-user reproduction and
-further distinct-text optimization. Issue #15 is still deferred; this work does
-not authorize a merge, public release or CTAN submission.
+further distinct-text optimization. Issue #15 now has the separate implemented
+automatic-authoring path; historical explicit-only results do not certify that
+new path in every context. This guide does not authorize a public release or
+CTAN submission.

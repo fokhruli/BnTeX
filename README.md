@@ -9,62 +9,68 @@ branch for the current package.
 | --- | --- |
 | `bntex-native.sty` / `\bnNative{...}` | Install the supported font profile once. New Bengali words are shaped by pdfTeX itself; no per-document preprocessing or external shaper is invoked. |
 | `bntex.sty` / `\bn{...}` | Legacy HarfBuzz-prepared word cache. New vocabulary or styles require preparation again. |
-| Automatic wrapper-free input | Deferred under issue #15; no `autobengali` option is implemented. |
+| `bntex-auto.sty` | Automatic connected-script routing; ordinary Bengali needs no wrappers. Real bold and opt-in synthetic slant use the audited family installation. |
 
-The native profile is experimental and limited to the exact static **Noto Serif
-Bengali Regular**, medium upright, `bng2`/default system. It is not a generic
+The native profiles are experimental and limited to the exact static **Noto Serif
+Bengali Regular and Bold**, `bng2`/default system. It is not a generic
 OpenType engine. Font files are local dependencies and are not included in Git,
 source archives, wheels, or downloads.
 
-## Native quick start
+## Automatic authoring quick start
 
-Install Python 3.10+, FontTools and a TeX distribution containing `pdflatex` and
-`pltotf`. Tests additionally use the project test extras, Poppler and the pinned
-HarfBuzz 10.2.0 reference environment. Supply your own installed static font.
-The required font SHA-256 is
-`32b4aeb731e3819d7a31216c885208a96e402ceeebb30fc39723b99220708fef`.
+The maintainer has activated issues #15/#25. Load `bntex-auto` and write ordinary
+Bengali mixed with English; no per-passage wrapper is required. Bold is a real
+font face. Italic/emphasis is **synthetic slant only with an explicit option**;
+without consent it fails rather than pretending that a true italic face exists.
 
 ```bash
 python -m pip install -e '.[test]' 'fonttools==4.63.0'
-python -m bntex.native compile \
-  --font /path/to/NotoSerifBengali-Regular.ttf \
-  --out build/native-profile.json
-python -m bntex.tex_export \
-  --profile build/native-profile.json \
-  --font /path/to/NotoSerifBengali-Regular.ttf \
-  --out build/native-installation
+python -m bntex.authoring_export \
+  --regular-font /path/to/NotoSerifBengali-Regular.ttf \
+  --bold-font /path/to/NotoSerifBengali-Bold.ttf \
+  --out build/authoring-installation
 python -m bntex.native_project stage \
-  --manifest examples/native-project/project.json \
-  --installation build/native-installation --out build/native-document
-cd build/native-document
-latexmk -pdf main.tex
+  --manifest examples/automatic-authoring/project.json \
+  --installation build/authoring-installation --out build/authoring-document
+cd build/authoring-document
+pdflatex -no-shell-escape -halt-on-error main.tex
 ```
 
-Outputs must be new. The example's `latexmkrc` disables shell execution. For
-ordinary editing, change `.tex` files in the staged project and compile again;
-new words do not require another export. Updating package/font/profile assets
-requires a fresh matching installation. Do not mix files from different exports.
+Python/font tools perform the one-time installation. After editing document
+text, run only pdfLaTeX again. New words require no preparation. Outputs must be
+new; updating the package requires a new complete matching installation.
 
 ```latex
-\usepackage{bntex-native}
+\usepackage[synthetic-italic]{bntex-auto}
 \BnTeXNativeLoadProfile{bntex-native-profile.tex}
 % In the document:
-English text remains in the surrounding font.
-\par\bnNative{বাংলা আমাদের মাতৃভাষা।}
+This is বাংলা text. বাংলা আমাদের মাতৃভাষা।
+\textbf{মোটা বাংলা লেখা}
+\textit{ঘোষিত কৃত্রিম বাঁকানো লেখা}
+\underline{নিচে দাগ দেওয়া লেখা}
+\section{বাংলা শিরোনাম}
 ```
 
-Keep English, math and commands outside literal Bengali spans. Spaces permit
-word-level wrapping; intraword hyphenation is not implemented. Each literal span
-is limited to 4,096 UTF-8 bytes. Unsupported styles and malformed inputs are
-errors, not silently approximated output.
+Read [automatic authoring](docs/AUTOMATIC-AUTHORING.md) for exact font hashes,
+style semantics, boundaries, original Unicode, and the tested support matrix.
+Standard LaTeX commands are not placed inside Bengali-specific wrappers.
+The supported Bengali family remains serif; arbitrary fonts, true italic,
+small caps, Bengali verbatim, and every package combination are not claimed.
 
-For headings and PDF strings, use `bntex-native-integration` and its
-`\BnTeXNativeDeclareText`, `\BnTeXNativeText`, and
-`\BnTeXNativeRegularText` interfaces. Declarations preserve original text; they
-are not a shaped-word dictionary. RegularText explicitly chooses regular upright
-inside a normally bold heading. See [native integration](docs/NATIVE-INTEGRATION.md).
-Optional `bntex-native-memo` reuses bounded glyph runs within one TeX process only;
-new words still execute the shaper. It is not a persistent word cache.
+## Existing explicit and cached interfaces
+
+The regular-only `bntex.tex_export` installation and `bntex-native`/`\bnNative`
+interface remain available without automatic routing. Its literal spans require
+English/commands/math outside the argument; 4,096 bytes per explicit span.
+The new automatic mode bounds each connected run instead, stopping at spaces.
+No intraword hyphenation is added. `bntex-native-integration` retains original-text
+declarations for explicit moving/PDF arguments. Automatic mode supports direct
+literal headings and hyperref strings instead.
+
+`bntex-native-memo` optionally reuses bounded positioned glyph runs inside one
+TeX process. Full font identity separates regular/bold; new words always execute
+the shaper. The legacy cached `bntex`/`\bn` contract still requires vocabulary
+preparation and is not used by automatic authoring.
 
 ## Validation and known limits
 
@@ -87,8 +93,8 @@ and distinct vocabulary must be measured separately. Long mostly distinct text
 remains slow relative to the former 90-second target; an extended timeout is not
 an optimization. Synthetic tokens are not representative book prose.
 
-**Pending:** actual Overleaf browser/second-user reproduction, scoped native
-visual acceptance, interactive long-document performance, public naming and
+**Pending:** actual Overleaf browser/second-user reproduction, review of new automatic/bold/slanted
+output, interactive long-document performance, public naming and
 font/profile distribution review. No all-font, all-viewer, tagged-PDF/PDF-UA,
 Windows/macOS or universal publisher-class compatibility is claimed. The
 repository remains private and publication requires a separate decision.

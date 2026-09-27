@@ -6,6 +6,16 @@ independent second-user reproduction was performed.** The connected tool catalog
 had no Overleaf integration in this task. Do not mark this checklist complete
 merely because local pdfLaTeX or GitHub Actions passed.
 
+## Current wrapper-free authoring
+
+Use [AUTOMATIC-AUTHORING.md](AUTOMATIC-AUTHORING.md) to export the audited
+regular/bold family and stage `examples/automatic-authoring/project.json`.
+That example types ordinary Bengali through `bntex-auto`, including standard
+formatting; no per-passage `\bn` or `\bnNative` command is required.
+The legacy explicit `examples/native-project` procedure below remains available.
+Test the selected interface in the browser rather than transferring acceptance
+from the other. Synthetic italic requires the explicit documented option.
+
 ## Build the upload on your machine
 
 Follow NATIVE-INTEGRATION.md to compile/export the exact installed font and stage
@@ -36,7 +46,8 @@ Record the following only after actually doing it; leave absent facts unfilled:
 - Overleaf compiler and selected TeX Live version; actual log engine banner.
 - Initial successful compilation; readable Bengali pages, TOC, bookmarks, metadata,
   captions, tables, footnotes and references. Preserve the downloaded log and PDF.
-- Add a new Bengali word inside an explicit span, then recompile without changing
+- Add a new bare Bengali word for the automatic project (or use an explicit span
+  for the legacy project), then recompile without changing
   the installation or invoking a preparer. Verify its rendering and extraction.
 - Verify ordinary English/math editing and changes to an included source file.
 - Verify the source filename case and helper/configuration files survived upload.
