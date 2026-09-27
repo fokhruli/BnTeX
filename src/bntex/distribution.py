@@ -11,6 +11,9 @@ from importlib.resources import files
 import json
 from pathlib import Path
 import re
+import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import zipfile
@@ -28,6 +31,42 @@ SOURCE_DIR = 'source/latex/bntex'
 FONT_DIRS = {'.ttf':'fonts/truetype/public/bntex',
              '.tfm':'fonts/tfm/public/bntex', '.enc':'fonts/enc/dvips/bntex'}
 EXTRA_MODULES = ('bntex.sty', 'bntex-cached.sty', 'bntex-distribution.sty')
+GENERATED_MODULES = ('bntex-default-profile.def', 'bntex-native-profile.tex',
+                     'bntex-native-tables.def', 'bntex-native-matchers.def',
+                     'bntex-native-bold.def')
+SOURCE_MODULES = ('__init__.py', '__main__.py', 'authoring_export.py', 'build.py',
+                  'corpus.py', 'distribution.py', 'harfbuzz.py', 'inventory.py',
+                  'mining.py', 'native.py', 'native_layout.py', 'native_model.py',
+                  'native_profile.py', 'native_project.py', 'profile.py',
+                  'source.py', 'tex_export.py')
+DOC_FILES = ('README.md', 'bntex-manual.pdf', 'bntex-manual.tex',
+             'bntex-example.tex', 'OFL-1.1.txt', 'FONT-NOTICES.md',
+             'LICENSE', 'THIRD-PARTY-NOTICES.md')
+REBUILD_GUIDE = rb"""# Maintainer reproduction from an installed BnTeX distribution
+
+This is release-maintainer documentation, not document-author setup.
+Authors load \usepackage{bntex} in an installed TeX distribution.
+
+From this directory (source/latex/bntex in the TDS tree), run:
+
+    python -B -m bntex.distribution rebuild --root ../../.. --out /a/fresh/output
+
+The -B flag keeps bytecode caches out of the immutable installed source tree.
+Use trusted, unmodified distribution sources and the matching maintainer
+Python/FontTools/TeX toolchain. Required executables: pdflatex and pltotf.
+FontTools 4.63.0 reproduces the pinned font profiles. No network is used.
+The root must contain the entire TDS distribution, including its two exact
+font binaries, license notices, original manual source and reference manual PDF.
+The rebuild re-compiles the manual twice with shell execution disabled, checks
+its exact bytes against the supplied PDF, runs the actual profile compilers,
+and requires an identical distribution manifest. Different toolchain output
+fails explicitly; existing output paths are never overwritten.
+
+This command executes trusted manual source. It is not a sandbox for hostile
+TeX. It never modifies the input installation, publishes files, or authorizes
+publication. Its complete font-containing archives remain maintainer outputs.
+"""
+
 CHECK = re.compile(r'\\BnTeXNativeCheckFile\{([A-Za-z0-9_.-]+)\}\{([0-9A-F]{32})\}')
 MAP = re.compile(r'\\pdfmapline\{\+([A-Za-z0-9_-]+) ([A-Za-z0-9_-]+) <([A-Za-z0-9_.-]+) <([A-Za-z0-9_.-]+)\}')
 
@@ -76,6 +115,21 @@ def installed_loader(raw: bytes, assets: dict[str, bytes]) -> bytes:
     # The public entry loads the resolver before the first font check.
     return ('% Installed family loader, no author profile setup.\n'+r'\RequirePackage{bntex-distribution}'+'\n'+
             '\n'.join(extra_checks+out)+'\n').encode('ascii')
+
+
+def required_files() -> set[str]:
+    """The release schema, not its editable inventory, defines completeness."""
+    names = {tds_path(n) for n in (*MODULES, *EXTRA_MODULES, *GENERATED_MODULES)}
+    for fingerprint in (FONT_SHA, PINNED_BOLD_SHA256):
+        prefix = 'bnf' + fingerprint[:16]
+        names.add(tds_path(prefix + '.ttf'))
+        for bank in range(3):
+            names.update(tds_path(f'{prefix}b{bank}{suffix}') for suffix in ('.tfm', '.enc'))
+    names.update(DOC_DIR + '/' + n for n in DOC_FILES)
+    names.update(SOURCE_DIR + '/bntex/' + n for n in SOURCE_MODULES)
+    names.update(SOURCE_DIR + '/bntex/data/' + n for n in (*EXTRA_MODULES, *MODULES))
+    names.add(SOURCE_DIR + '/REPRODUCING.md')
+    return names
 
 
 def fresh(path: Path) -> None:
@@ -127,14 +181,19 @@ def assemble(regular_font: Path, bold_font: Path, out: Path, *,
             p=tree/DOC_DIR/n;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(raw)
         # Exporters are auditable build sources, not runtime dependencies.
         source=files('bntex')
-        for f in source.iterdir():
-            if f.name.endswith('.py'):
-                p=tree/SOURCE_DIR/'bntex'/f.name;p.parent.mkdir(parents=True,exist_ok=True)
-                p.write_bytes(f.read_bytes())
+        actual_sources = {f.name for f in source.iterdir() if f.name.endswith('.py')}
+        if actual_sources != set(SOURCE_MODULES):
+            raise ValueError('Maintainer source inventory changed; update the release schema')
+        for name in SOURCE_MODULES:
+            p=tree/SOURCE_DIR/'bntex'/name;p.parent.mkdir(parents=True,exist_ok=True)
+            p.write_bytes(source.joinpath(name).read_bytes())
+        (tree/SOURCE_DIR/'REPRODUCING.md').write_bytes(REBUILD_GUIDE)
         for n,raw in assets.items():
             if n in (*EXTRA_MODULES,*MODULES):
                 p=tree/SOURCE_DIR/'bntex'/'data'/n;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(raw)
         records={str(p.relative_to(tree)):sha(p.read_bytes()) for p in sorted(tree.rglob('*')) if p.is_file()}
+        if set(records) != required_files():
+            raise ValueError('Incomplete or unexpected assembled distribution')
         manifest={'schema':1,'kind':'bntex-complete-local-tds','version':VERSION,
                   'font_sha256':FONT_SHA,'bold_font_sha256':PINNED_BOLD_SHA256,
                   'regular_profile_sha256':PROFILE_SHA,'bold_profile_sha256':family['bold_profile_sha256'],
@@ -157,9 +216,19 @@ def verify(root: Path) -> dict:
         raise ValueError('Unsupported distribution manifest')
     if (m.get('font_sha256')!=FONT_SHA or m.get('bold_font_sha256')!=PINNED_BOLD_SHA256
             or m.get('regular_profile_sha256')!=PROFILE_SHA or m.get('bold_profile_sha256')!=BOLD_PROFILE_SHA
-            or m.get('vocabulary','missing') is not None):
+            or m.get('vocabulary','missing') is not None
+            or m.get('version') != VERSION or m.get('runtime_python') is not False
+            or m.get('runtime_shell') is not False or m.get('publication_authorized') is not False
+            or m.get('browser_test') != 'not-performed'):
         raise ValueError('Unsupported distribution identities')
-    actual={str(p.relative_to(root)) for p in root.rglob('*') if p.is_file()}
+    # A missing file AND a removed manifest entry must not turn a broken
+    # installation into a verified archive. This schema is deliberately closed.
+    if set(m['files']) != required_files():
+        raise ValueError('Incomplete or unexpected distribution inventory')
+    paths = list(root.rglob('*'))
+    if any(p.is_symlink() for p in paths):
+        raise ValueError('Symlinks are not distribution assets')
+    actual={str(p.relative_to(root)) for p in paths if p.is_file()}
     allowed=set(m['files'])|{DOC_DIR+'/distribution-manifest.json','ls-R'}
     if actual-allowed: raise ValueError('Unlisted distribution files')
     if not 20<=len(m['files'])<=512: raise ValueError('Invalid file count')
@@ -177,6 +246,15 @@ def verify(root: Path) -> dict:
         raise ValueError('Wrong regular outlines')
     if sha(_read(root/FONT_DIRS['.ttf']/('bnf'+PINNED_BOLD_SHA256[:16]+'.ttf')))!=PINNED_BOLD_SHA256:
         raise ValueError('Wrong bold outlines')
+    if sha(_read(root/DOC_DIR/'OFL-1.1.txt')) != OFL_SHA256:
+        raise ValueError('Complete pinned font license text is required')
+    if not _read(root/DOC_DIR/'bntex-manual.pdf').startswith(b'%PDF-'):
+        raise ValueError('Compiled PDF manual is required')
+    for name in (*EXTRA_MODULES, *MODULES):
+        if _read(root/TEX_DIR/name) != _read(root/SOURCE_DIR/'bntex/data'/name):
+            raise ValueError(f'Runtime/source module mismatch: {name}')
+    if _read(root/TEX_DIR/'bntex-default-profile.def') != _read(root/TEX_DIR/'bntex-native-profile.tex'):
+        raise ValueError('Default/explicit installed loaders differ')
     return m
 
 
@@ -221,6 +299,60 @@ def pack(root: Path, out: Path) -> dict:
     return report
 
 
+def rebuild(root: Path, out: Path) -> dict:
+    """Reproduce trusted release sources without a development checkout.
+
+    This explicit maintainer action compiles TeX source; verify() alone never
+    executes it. Matching toolchain output is required, not silently rebaselined.
+    """
+    root, out = Path(root).resolve(), Path(out)
+    original = verify(root)
+    fresh(out)
+    if out.resolve().is_relative_to(root):
+        raise ValueError('Rebuild output must be outside its source installation')
+    package = files('bntex')
+    for name in SOURCE_MODULES:
+        if package.joinpath(name).read_bytes() != _read(root/SOURCE_DIR/'bntex'/name):
+            raise ValueError('Run rebuild using the sources shipped with this distribution')
+    engine = shutil.which('pdflatex')
+    if not engine:
+        raise ValueError('Maintainer pdfLaTeX toolchain is missing')
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='.bntex-rebuild-', dir=out.parent) as temp:
+        temp=Path(temp); manual=temp/'manual'; manual.mkdir()
+        source=manual/'bntex-installation.tex'
+        source.write_bytes(_read(root/DOC_DIR/'bntex-manual.tex'))
+        env=dict(os.environ, SOURCE_DATE_EPOCH='1767225600', FORCE_SOURCE_DATE='1', TZ='UTC')
+        for _ in range(2):
+            proc=subprocess.run([engine, '-no-shell-escape', '-halt-on-error',
+                                 '-interaction=nonstopmode', source.name], cwd=manual,
+                                env=env, capture_output=True, timeout=90)
+            if proc.returncode:
+                raise ValueError('Manual rebuild failed: '+proc.stdout.decode(errors='replace')[-3000:])
+        pdf=manual/'bntex-installation.pdf'
+        if _read(pdf) != _read(root/DOC_DIR/'bntex-manual.pdf'):
+            raise ValueError('Manual differs: use the matching source-build TeX toolchain')
+        stage=temp/'result'; stage.mkdir()
+        doc=root/DOC_DIR
+        reproduced=assemble(
+            root/tds_path('bnf'+FONT_SHA[:16]+'.ttf'),
+            root/tds_path('bnf'+PINNED_BOLD_SHA256[:16]+'.ttf'), stage/'texmf',
+            license_file=doc/'OFL-1.1.txt', manual_pdf=pdf,
+            manual_source=doc/'bntex-manual.tex', example=doc/'bntex-example.tex',
+            readme=doc/'README.md', notices=doc/'FONT-NOTICES.md',
+            code_license=doc/'LICENSE', third_party_notices=doc/'THIRD-PARTY-NOTICES.md')
+        if reproduced != original:
+            raise ValueError('Rebuilt distribution differs from the recorded manifest')
+        report=pack(stage/'texmf', stage/'archives')
+        report.update(runtime_files=len(reproduced['files']), source_rebuild='exact-match')
+        (stage/'build-report.json').write_text(json.dumps(report,sort_keys=True,indent=2)+'\n')
+        # Verify the original before committing the new output tree.
+        if verify(root) != original:
+            raise ValueError('Input distribution changed during rebuild')
+        stage.rename(out)
+    return report
+
+
 def main(argv=None) -> int:
     p=argparse.ArgumentParser(description=__doc__); sub=p.add_subparsers(dest='cmd',required=True)
     a=sub.add_parser('assemble')
@@ -229,10 +361,12 @@ def main(argv=None) -> int:
         a.add_argument('--'+name,type=Path,required=True)
     a=sub.add_parser('verify');a.add_argument('--root',type=Path,required=True)
     a=sub.add_parser('pack');a.add_argument('--root',type=Path,required=True);a.add_argument('--out',type=Path,required=True)
+    a=sub.add_parser('rebuild');a.add_argument('--root',type=Path,required=True);a.add_argument('--out',type=Path,required=True)
     args=p.parse_args(argv)
     try:
         if args.cmd=='verify':result=verify(args.root)
         elif args.cmd=='pack':result=pack(args.root,args.out)
+        elif args.cmd=='rebuild':result=rebuild(args.root,args.out)
         else:
             d=vars(args).copy();d.pop('cmd');result=assemble(**d)
         print(json.dumps(result,sort_keys=True,indent=2));return 0

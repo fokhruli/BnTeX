@@ -60,13 +60,12 @@ An old generated shim in a document folder shadows an installed package;
 remove or migrate that old project intentionally before using the new interface.
 \newpage
 \section{What the maintainer builds}
-The complete runtime includes precompiled Unicode/shaping tables, matcher
-routines, bold positioning data, six metric/encoding banks, and the exact
-Regular and Bold outline fonts. These are generated once for the release,
-not separately for each author or each word. Font binaries are not in the
-source repository or the downloadable source-review archive.
+The complete runtime includes precompiled shaping tables, matchers, bold
+positioning data, six metric/encoding banks, and the exact Regular and Bold
+outline fonts. These are built once for the release, never per author or word.
+Font binaries are not included in the repository or source-review download.
 
-The local builder places files under the following TDS directories:
+Files occupy conventional TDS directories:
 \begin{Verbatim}[fontsize=\small]
 tex/latex/bntex/
 fonts/tfm/public/bntex/
@@ -75,42 +74,42 @@ fonts/truetype/public/bntex/
 doc/latex/bntex/
 source/latex/bntex/
 \end{Verbatim}
-A deterministic local packaging operation produces a TDS ZIP and a complete
-browsing-style CTAN candidate including that TDS ZIP. These are local maintainer
-outputs. Building them does not submit or authorize publication.
+The maintainer build produces deterministic TDS and browsing-style candidate
+ZIPs. The shipped source directory includes \texttt{REPRODUCING.md}: its
+maintainer-only rebuild compiles the manual and font data, requiring identical
+runtime and archive bytes with a matching toolchain. It needs no development
+checkout. Neither build command submits files or authorizes publication.
 
 \section{Integrity and relocation}
-Font-format searches differ from ordinary TeX input searches. The installed
-loader checks the canonical asset path in standard TeX Live roots and reuses
-that same checked path for the actual font map and metric loading. It does not
-check one file and then resolve a different file by basename. Moving the whole
-TDS tree does not require rebuilding profiles or recording a new developer path.
-Missing or changed checked assets stop compilation.
+Font-format searches differ from ordinary TeX input searches. The loader checks
+assets in standard TeX Live roots and reuses the same verified paths for maps
+and metrics. Moving the whole TDS tree needs no rebuilt profile or baked-in
+installation path. Missing or changed checked assets stop compilation.
 
-MD5 guards detect accidental drift, not an adversarial coordinated replacement.
-A SHA-256 manifest inventories the complete local distribution. The manifest is
-not a digital signature. Installation and package-manager trust remain necessary.
+Archive verification independently requires the complete file set, so deleting
+both a file and its manifest entry still fails. Complete license text, matching
+runtime/source modules, and both installed loaders are checked.
+MD5 detects accidental drift, not coordinated malicious replacement; the
+SHA-256 inventory is not a signature. Package-manager trust remains necessary.
 
 \textbf{Read-policy compatibility.} Normal TeX Live input policy is tested.
-Under \texttt{openin\_any=p}, the local pdfTeX 1.40.26 refuses symbolic-root
-checksums, while the TeX Live 2023 CI engine permits them. Tests independently
-probe the primitive and require rendering plus corruption rejection when
-readable, or a clear error otherwise. The package never relaxes the policy
-or skips integrity checks. This is not an all-platform compatibility claim.
-Custom search trees outside the documented standard roots and MiKTeX are not
-yet validated. The code does not invoke a shell or \texttt{kpsewhich} at runtime.
+Restrictive \texttt{openin\_any=p} behavior depends on the engine/Kpathsea version:
+the local pdfTeX 1.40.26 refuses symbolic-root checksums. Tests probe the primitive
+and require either checked rendering or a clear error. No policy is relaxed and
+no check is skipped. The package invokes neither a shell nor \texttt{kpsewhich}.
+Custom search trees and MiKTeX remain unvalidated. See the accompanying README
+for the upstream 2026 input-policy change and its compatibility implications.
 
 \section{Release and platform acceptance}
-The font licenses and exact binary identities must be reviewed before an upload.
-Original package code is MIT with its retained third-party notices; the fonts
-and font-derived resources retain their SIL Open Font License notices.
-See \texttt{LICENSE}, \texttt{THIRD-PARTY-NOTICES.md}, \texttt{OFL-1.1.txt},
-and \texttt{FONT-NOTICES.md}.
+Before upload, review the exact font identities and their license terms.
+Original code is MIT with retained third-party notices; fonts and derived
+resources retain SIL OFL notices. See \texttt{LICENSE},
+\texttt{THIRD-PARTY-NOTICES.md}, \texttt{OFL-1.1.txt}, and \texttt{FONT-NOTICES.md}.
 
-CTAN acceptance, TeX Live inclusion and availability in a particular Overleaf
-image are different events. No public submission or availability is claimed.
-Actual Overleaf editing, independent installation, new-style human review,
-package naming and outstanding performance targets remain separately recorded.
-See \href{https://ctan.org/help/upload-pkg}{CTAN upload rules} and
+CTAN acceptance, TeX Live inclusion and Overleaf availability are separate.
+No public submission or platform availability is claimed. Actual Overleaf
+editing, independent installation, new-style human review, package naming and
+outstanding performance targets remain pending. See
+\href{https://ctan.org/help/upload-pkg}{CTAN upload rules} and
 \href{https://ctan.org/TDS-guidelines}{TDS guidelines}.
 \end{document}

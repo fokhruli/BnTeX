@@ -23,7 +23,7 @@ jobs:
           BNTEX_REQUIRE_INTEGRATION: '1'
         run: |
           kpsewhich --var-value=openin_any
-          python -m pytest -q -s tests/test_installed_distribution.py
+          python -m pytest -q -s tests/test_installed_distribution.py tests/test_distribution_completeness.py
       - name: Build complete local runtime and candidate archives without uploading
         run: |
           python tools/build_distribution.py --out build/local-distribution

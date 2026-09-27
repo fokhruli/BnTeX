@@ -2,6 +2,11 @@
 
 ## Unreleased installable-distribution candidate
 
+- Require a closed release inventory independently of editable manifest entries;
+  reject omitted profiles, banks, notices, manuals and build sources.
+- Add maintainer reproduction from shipped sources with exact manual, manifest
+  and archive comparisons, without access to the development checkout.
+
 - Public `bntex` defaults to automatic input and default-profile loading.
 - Explicit `cached` option and `bntex-cached` retain legacy preparation; generated
   cached projects receive a labelled compatibility shim without source rewriting.
