@@ -7,11 +7,13 @@ import os
 from pathlib import Path
 import subprocess
 
-BASE = '3b1c8fb42db98d95e82250c9df3a01d5cb788d36'
+CHECKPOINT = '4169710a7ca9b423c7e1844316c27091f769ca7b'
 TREE = '23ae9f9fbcca77a391794f44328b5bf64fb5ac7a'
 PATCH_SHA = '8876aefcc8a1cfcd7d6659f80ceb6ced344d9c9894be87209d4ea8d7a1cc204a'
 BRANCH = 'feat/installable-distribution'
 PREFIX = '.github/maintenance/installable-transfer'
+WORKFLOW = '.github/workflows/distribution-dry-run.yml'
+WORKFLOW_BLOB = 'd86b945461308ccb4a17c5b9a46a1579a4b304e0'
 
 
 def git(*args, **kw):
@@ -24,8 +26,12 @@ def main():
             or os.environ.get('GITHUB_REF') != 'refs/heads/' + BRANCH
             or event.get('repository', {}).get('private') is not True):
         raise RuntimeError('Wrong repository, branch, or visibility')
-    if git('rev-parse', 'HEAD') != os.environ['GITHUB_SHA'] or git('rev-parse', 'HEAD^') != BASE:
+    if git('rev-parse', 'HEAD') != os.environ['GITHUB_SHA'] or git('rev-parse', 'HEAD^') != CHECKPOINT:
         raise RuntimeError('Source checkpoint moved')
+    # The authorized connector installs workflow changes; GITHUB_TOKEN does not
+    # have workflow-write permission and is used only for ordinary source here.
+    if git('hash-object', WORKFLOW) != WORKFLOW_BLOB:
+        raise RuntimeError('Prerequisite workflow differs')
     parts = [PREFIX + '.' + str(i) + '.b64' for i in range(3)]
     encoded = ''.join(Path(p).read_text('ascii') for p in parts)
     if len(encoded) != 28560:
@@ -38,8 +44,8 @@ def main():
         raise RuntimeError('Wrong source payload')
     path = Path('.git/bntex-tested-source.patch')
     path.write_bytes(patch)
-    git('apply', '--check', '--index', str(path))
-    git('apply', '--index', str(path))
+    git('apply', '--check', '--index', '--exclude=' + WORKFLOW, str(path))
+    git('apply', '--index', '--exclude=' + WORKFLOW, str(path))
     git('rm', '--', *parts, PREFIX + '.py', '.github/workflows/installable-source-transfer.yml')
     if git('write-tree') != TREE:
         raise RuntimeError('Candidate tree differs from locally tested source')
@@ -51,7 +57,6 @@ def main():
     auth = base64.b64encode(('x-access-token:' + env['GITHUB_TOKEN']).encode()).decode()
     env.update(GIT_CONFIG_COUNT='1', GIT_CONFIG_KEY_0='http.https://github.com/.extraheader',
                GIT_CONFIG_VALUE_0='AUTHORIZATION: basic ' + auth)
-    # A concurrent branch advance rejects this normal fast-forward push.
     git('push', 'origin', 'HEAD:refs/heads/' + BRANCH, env=env)
     print('Transferred tested source tree', TREE, 'at', git('rev-parse', 'HEAD'))
 
