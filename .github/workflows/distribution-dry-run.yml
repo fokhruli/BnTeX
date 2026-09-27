@@ -23,12 +23,13 @@ jobs:
           BNTEX_REQUIRE_INTEGRATION: '1'
         run: |
           kpsewhich --var-value=openin_any
-          python -m pytest -q tests/test_installed_distribution.py
+          python -m pytest -q -s tests/test_installed_distribution.py
       - name: Build complete local runtime and candidate archives without uploading
         run: |
           python tools/build_distribution.py --out build/local-distribution
           python -m bntex.distribution verify --root build/local-distribution/texmf > build/tds-verification.json
           cat build/local-distribution/build-report.json
 # No artifact-upload, publishing, font redistribution or gate-completion step.
-# Success covers the default TeX Live read policy. The restrictive-policy test
-# verifies explicit rejection; it must never be described as supported use.
+# Default-policy support and restrictive-policy capability are tested separately.
+# A primitive probe determines whether restrictive paths are readable; the package
+# must either render with intact checks or fail explicitly, never relax the policy.
