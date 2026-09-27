@@ -2,7 +2,8 @@
 
 Current main contains both a native fixed-profile shaper and a legacy cached
 backend. Read README.md, docs/NATIVE-TEX.md, docs/NATIVE-INTEGRATION.md,
-docs/NATIVE-DISPATCH-PERFORMANCE.md and docs/RELEASE-READINESS.md first.
+docs/NATIVE-DISPATCH-PERFORMANCE.md, docs/AUTOMATIC-AUTHORING.md and
+docs/RELEASE-READINESS.md first.
 Historical architecture/roadmap snapshots are not a current feature inventory.
 
 ## Invariants
@@ -15,8 +16,11 @@ Historical architecture/roadmap snapshots are not a current feature inventory.
   glyph clusters. Keep glyph output native, not images, paths or PDF fragments.
 - Keep authoritative `tex/latex/bntex/*.sty` and `*.def` identical to the matching
   `src/bntex/data/` resources. Never rebaseline frozen glyph fixtures to fix tests.
-- One exact regular-upright profile is supported. Automatic wrapper-free routing
-  is deferred under #15 until the pending backlog is completed; do not activate it.
+- The current maintainer request activates #15/#25: wrapper-free input and styles.
+  `bntex-auto` is opt-in by loading the package; normal Bengali needs no wrappers.
+  Exactly audited regular/bold fonts are supported. Bold uses its own metrics
+  and GPOS; synthetic slant requires explicit `synthetic-italic` consent and must
+  never be described as a true italic face. Keep the legacy default unchanged.
 - Optimize measured work without weakening ordering, filtering, contextual
   blocking, bounds, failure policies or the unseen-word/no-helper gate.
 

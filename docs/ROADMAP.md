@@ -38,16 +38,22 @@ font/profile distribution and publication decisions. CTAN packaging still needs
 final naming/layout review and removal of private-development references before
 any public submission. No package, tag or public release is created by preflight.
 
-## Deferred issue #15
+## Active authoring milestone: #15 and #25
 
-Wrapper-free automatic Bengali input is a recorded product requirement, not the
-current coding task. Revisit it after the pending backlog with the maintainer.
-Keep explicit `\bnNative` available and retain no-helper, original-Unicode and
-Latin-compatibility regressions when an automatic dispatcher is eventually added.
+The maintainer explicitly superseded the earlier deferral. `bntex-auto` routes
+connected Unicode Bengali without per-passage wrappers. The authoring exporter
+installs the two audited regular/bold faces; standard NFSS weight switches select
+real bold. Synthetic slanted emphasis is an explicit option, not a true italic
+face. Standard effects and ordinary LaTeX contexts have separate regression
+coverage. See AUTOMATIC-AUTHORING.md for the exact implemented support matrix.
+Historical statements that routing is deferred are preserved in dated reports,
+not instructions overriding the current request. Performance and external user
+acceptance remain open; do not require another micro-optimization before useful
+authoring tests. No public release is authorized by this priority change.
 
 ## Subsequent scope, not current claims
 
-Reviewed bold/sans/other font profiles, stronger line-break policy, supported
+Additional sans/true-italic/other font profiles, stronger line-break policy, supported
 publisher classes, additional platforms/viewers and tagged-PDF accessibility each
 need separate specifications and tests. Passing a fixed font or Poppler does not
 establish any of these. Existing human-review records must retain real attribution.

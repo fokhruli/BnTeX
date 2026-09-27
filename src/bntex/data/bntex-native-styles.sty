@@ -1,0 +1,51 @@
+%% NFSS face selection for the exact audited regular/bold family. MIT.
+\NeedsTeXFormat{LaTeX2e}[2022-06-01]
+\RequirePackage{bntex-native}
+\ProvidesExplPackage{bntex-native-styles}{2026-09-26}{0.1.0}{Native Bengali NFSS styles}
+\bool_new:N\g__bns_bold_loaded_bool
+\bool_new:N\l__bns_synthetic_bool
+\bool_new:N\l__bns_slant_bool
+\box_new:N\l__bns_box
+\dim_new:N\l__bns_width_dim
+\cs_new_eq:NN\__bns_regular_tab:n\__bn_tab:n
+\cs_new_eq:NN\__bns_render:\__bn_render:
+\NewDocumentCommand\BnTeXSyntheticItalicOn{}{\bool_set_true:N\l__bns_synthetic_bool}
+\NewDocumentCommand\BnTeXSyntheticItalicOff{}{\bool_set_false:N\l__bns_synthetic_bool}
+\NewDocumentCommand\BnTeXNativeBoldReady{mm}
+ {\str_if_eq:nnF{#1}{96cc17640329810e2ac1b53d61ec4f429ba9bf729d4f37623a296581d79a5133}{\__bn_fail:n{bold~font~identity}}
+  \str_if_eq:nnF{#2}{e3a798be7b57bb363c041cb7252a97c2c565c59215db868e837c069ed117b0f8}{\__bn_fail:n{bold~profile~identity}}
+  \bool_gset_true:N\g__bns_bold_loaded_bool}
+\cs_new:Npn\__bns_bold_tab:n #1
+ {\cs_if_exist_use:cF{__bnb_#1}{\__bns_regular_tab:n{#1}}}
+\cs_set_protected:Npn\__bn_select_style:
+ {\bool_set_false:N\l__bns_slant_bool
+  \cs_set_eq:NN\__bn_tab:n\__bns_regular_tab:n
+  \cs_set:Npn\__bn_font_prefix:{bnf32b4aeb731e3819d}
+  \cs_set:Npn\__bn_memo_identity:{32b4aeb731e3819d7a31216c885208a96e402ceeebb30fc39723b99220708fef/}
+  \str_case_e:nnF{\f@series}
+   {{m}{} {b}{\__bns_bold:} {bx}{\__bns_bold:}}
+   {\__bn_fail:n{unsupported~Bengali~font~series}}
+  \str_case_e:nnF{\f@shape}
+   {{n}{} {it}{\__bns_slant:} {sl}{\__bns_slant:}}
+   {\__bn_fail:n{unsupported~Bengali~font~shape}}}
+\cs_new_protected:Npn\__bns_bold:
+ {\bool_if:NF\g__bns_bold_loaded_bool{\__bn_fail:n{install~the~audited~bold~profile~first}}
+  \cs_set_eq:NN\__bn_tab:n\__bns_bold_tab:n
+  \cs_set:Npn\__bn_font_prefix:{bnf96cc17640329810e}
+  \cs_set:Npn\__bn_memo_identity:{96cc17640329810e2ac1b53d61ec4f429ba9bf729d4f37623a296581d79a5133/}}
+\cs_new_protected:Npn\__bns_slant:
+ {\bool_if:NTF\l__bns_synthetic_bool{\bool_set_true:N\l__bns_slant_bool}
+   {\__bn_fail:n{no~true~italic~face;~opt~in~to~synthetic-italic~or~use~upright}}}
+\cs_set_protected:Npn\__bn_render:
+ {\bool_if:NTF\l__bns_slant_bool
+   {\group_begin:
+    \hbox_set:Nn\l__bns_box{\__bns_render:}
+    \dim_set:Nn\l__bns_width_dim{\box_wd:N\l__bns_box}
+    % Explicit 0.18 x-shear about the baseline; not a font's true italic face.
+    % The advance is unchanged. Restore PDF state at the same TeX position.
+    \hbox_overlap_right:n{\pdfsave\pdfsetmatrix{1~0~0.18~1}
+      \hbox_overlap_right:n{\box_use_drop:N\l__bns_box}\pdfrestore}
+    \kern\l__bns_width_dim\group_end:}
+   {\__bns_render:}}
+\ExplSyntaxOff
+\endinput

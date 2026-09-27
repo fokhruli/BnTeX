@@ -165,7 +165,8 @@ class NativeShaper:
         if 'pref' in {f.tag for f in profile.gsub_features}:
             raise ShapingError('features: pre-base consonant reordering is outside this pinned font model')
         self.identity = hashlib.sha256(serialize(profile)).hexdigest()
-        if self.identity != PINNED_PROFILE_SHA256:
+        if self.identity not in (PINNED_PROFILE_SHA256,
+                                 'e3a798be7b57bb363c041cb7252a97c2c565c59215db868e837c069ed117b0f8'):
             raise ShapingError('profile: compiled-rule fingerprint is not the supported ABI-1 profile')
         self.cmap = dict(profile.cmap)
         self.layout = Layout(profile)

@@ -1,0 +1,85 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,margin=24mm]{geometry}
+\usepackage[synthetic-italic]{bntex-auto}
+\BnTeXNativeLoadProfile{bntex-native-profile.tex}
+\usepackage{xcolor,booktabs,amsmath,fancyhdr}
+\usepackage[normalem]{ulem}
+\usepackage[unicode,hidelinks]{hyperref}
+\definecolor{accent}{HTML}{17456B}
+\hypersetup{pdftitle={বাংলা লেখার স্বাধীনতা},pdfauthor={BnTeX contributors}}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small BnTeX / Automatic authoring specimen}
+\fancyhead[R]{\small pdfLaTeX only}
+\fancyfoot[L]{\small Real bold; explicitly simulated slanted emphasis}
+\fancyfoot[R]{\thepage}
+\setlength{\headheight}{15pt}
+\setlength{\parindent}{0pt}\setlength{\parskip}{8pt}
+\begin{document}
+\ifnum\pdfshellescape=0\else\errmessage{Shell execution must be disabled}\fi
+{\Huge\color{accent} বাংলা লেখার স্বাধীনতা}\par
+English and বাংলা can appear together, without a wrapper around Bengali words.
+The source of this document uses ordinary LaTeX text and formatting commands.
+
+\section{সরাসরি বাংলা লেখা}
+বাংলা আমাদের মাতৃভাষা। এখন একটি অনুচ্ছেদের মধ্যে English এবং বাংলা পাশাপাশি লেখা যায়। নতুন শব্দ যোগ করার পর শুধু pdfLaTeX দিয়ে আবার সংকলন করতে হবে। প্রতিটি শব্দ আলাদা করে প্রস্তুত করার দরকার নেই।
+
+\subsection{মোটা অক্ষর ও গুরুত্ব}
+Regular: বাংলা ভাষায় গবেষণার বিবরণ।\par
+\textbf{Bold: বাংলা ভাষায় গবেষণার বিবরণ।}\par
+\textbf{মোটা লেখা, \textmd{মাঝখানে সাধারণ লেখা,} আবার মোটা লেখা।}
+
+\subsection{বাঁকানো লেখা ও জোর}
+\textit{বাঁকানো অক্ষরে একটি বাংলা বাক্য।}\par
+\emph{গুরুত্বপূর্ণ কথা এবং \emph{গুরুত্বের ভিতরে সাধারণ লেখা।}}
+
+\smallskip
+{\small The selected family has no true italic face. This document explicitly
+requests \texttt{synthetic-italic}: a declared shear of the regular or real-bold
+face. Without that option, unsupported italic requests produce an error.}
+
+\subsection{দাগ, রং ও আকার}
+\underline{নিচে দাগ দেওয়া বাংলা লেখা।}\par
+\sout{বাতিল করা পুরোনো বক্তব্য।}\par
+\textcolor{accent}{রঙিন বাংলা এবং English লেখা।}\par
+{\Large বড় আকারের লেখা।} {\small ছোট আকারের লেখা।}
+
+\newpage
+\section{নথির সাধারণ অংশ}
+এই পাতায় সারণি, সমীকরণ, পাদটীকা ও যুক্তাক্ষর দেখানো হয়েছে।
+বাংলা স্বয়ংক্রিয়ভাবে শনাক্ত হয়; সাধারণ LaTeX নির্দেশ স্বাভাবিকভাবে কাজ করে।\footnote{এটি বাংলা পাদটীকা। এখানে English শব্দও রাখা যায়।}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{বিষয়} & \textbf{উদাহরণ} & \textbf{ব্যবহার} \\
+\midrule
+সাধারণ & বাংলা লেখা & অনুচ্ছেদ \\
+মোটা & \textbf{বাংলা লেখা} & শিরোনাম \\
+দাগ & \underline{বাংলা লেখা} & গুরুত্ব \\
+বাঁকানো & \textit{বাংলা লেখা} & ঘোষিত কৃত্রিম ঢাল \\
+\bottomrule
+\end{tabular}
+\caption{সাধারণ লেখার প্রভাবের নমুনা।}
+\end{table}
+
+\subsection{সমীকরণের মধ্যে বাংলা}
+\[
+ x_{t+1}=f(x_t,u_t)+w_t,
+ \qquad \text{বাংলা বর্ণনা},\quad x_{\text{লক্ষ্য}}.
+\]
+সাধারণ গণিতের অক্ষর ও বাংলা বর্ণনা এখানে আলাদা থাকে।
+
+\subsection{যুক্তাক্ষর ও স্বরচিহ্ন}
+ক্ষ জ্ঞ হ্ম ঞ্জ ঙ্গ ত্র ক্ত ষ্ণ ক্র ক্য স্ব স্ম কর্ম সূর্য প্রযুক্তি স্বাস্থ্য।\par
+রু রূ শু গু হু হৃ ত্রু ন্তু স্তু।\par
+\textbf{ক্ষ জ্ঞ হ্ম ঞ্জ ঙ্গ ত্র ক্ত ষ্ণ ক্র ক্য স্ব স্ম কর্ম সূর্য প্রযুক্তি স্বাস্থ্য।}\par
+\textbf{রু রূ শু গু হু হৃ ত্রু ন্তু স্তু।}\par
+০ ১ ২ ৩ ৪ ৫ ৬ ৭ ৮ ৯।
+
+\subsection{বহু লাইনে নিচের দাগ}
+\uline{বাংলা লেখার নিচে দাগ দেওয়ার সময় একটি দীর্ঘ বাক্য একাধিক লাইনে যেতে পারে। যুক্তাক্ষর ভেঙে না দিয়ে শব্দের মধ্যবর্তী ফাঁকে স্বাভাবিকভাবে নতুন লাইন তৈরি হয়।}
+
+{\small This specimen is a local rendering check, not Overleaf certification,
+review of every possible package combination, or a publication release.}
+\end{document}

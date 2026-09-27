@@ -15,6 +15,8 @@ import types
 from typing import Literal, Union, get_args, get_origin, get_type_hints
 
 PINNED_FONT_SHA256 = '32b4aeb731e3819d7a31216c885208a96e402ceeebb30fc39723b99220708fef'
+PINNED_BOLD_SHA256 = '96cc17640329810e2ac1b53d61ec4f429ba9bf729d4f37623a296581d79a5133'
+SUPPORTED_FONT_SHA256 = frozenset((PINNED_FONT_SHA256, PINNED_BOLD_SHA256))
 PROFILE_ABI = 1
 MAX_PROFILE_BYTES = 8 * 1024 * 1024
 
@@ -153,7 +155,7 @@ def validate(profile: FontProfile) -> FontProfile:
     """Validate references and ranges in addition to the typed JSON structure."""
     require(type(profile) is FontProfile and profile.kind == 'bntex-fixed-font-profile', 'Invalid profile record')
     require(type(profile.abi) is int and profile.abi == PROFILE_ABI, 'Unsupported profile ABI')
-    require(profile.font_sha256 == PINNED_FONT_SHA256, 'Unsupported font fingerprint')
+    require(profile.font_sha256 in SUPPORTED_FONT_SHA256, 'Unsupported font fingerprint')
     require(profile.script == 'bng2' and profile.language == 'dflt', 'Unsupported script/language')
     n = profile.glyph_count
     require(type(n) is int and type(profile.upem) is int and 0 < n <= 65535 and 16 <= profile.upem <= 16384, 'Invalid font dimensions')
@@ -378,7 +380,7 @@ def compile_profile(font_path: str | Path) -> FontProfile:
     raw = path.read_bytes()
     require(len(raw) <= 64 * 1024 * 1024, 'Font exceeds 64 MiB')
     digest = hashlib.sha256(raw).hexdigest()
-    require(digest == PINNED_FONT_SHA256, 'Unsupported font: exact pinned Noto Serif Bengali Regular is required')
+    require(digest in SUPPORTED_FONT_SHA256, 'Unsupported font: exact pinned Noto Serif Bengali Regular or Bold is required')
     try:
         with TTFont(BytesIO(raw), lazy=False) as font:
             require('glyf' in font and not any(t in font for t in ('fvar', 'CFF ', 'CFF2')), 'Static TrueType only')

@@ -1,0 +1,73 @@
+%% Opt-in package: connected Bengali text is routed without author wrappers.
+%% Copyright 2026 BnTeX contributors. MIT; no copied kernel implementation.
+\NeedsTeXFormat{LaTeX2e}[2022-06-01]
+\RequirePackage{bntex-native-styles}
+\ProvidesExplPackage{bntex-auto}{2026-09-26}{0.1.0}{Automatic Bengali input in pdfLaTeX}
+\DeclareOption{synthetic-italic}{\BnTeXSyntheticItalicOn}
+\DeclareOption*{\PackageError{bntex-auto}{Unknown option \CurrentOption}{Use synthetic-italic only for explicitly simulated slanted emphasis.}}
+\ProcessOptions\relax
+\bool_new:N\l__bna_enabled_bool
+\bool_set_true:N\l__bna_enabled_bool
+\tl_new:N\l__bna_run_tl
+\tl_new:N\l__bna_pending_tl
+\tl_new:N\g__bna_pdf_setup_tl
+\int_new:N\l__bna_bytes_int
+\int_new:N\l__bna_need_int
+\int_new:N\l__bna_cp_int
+\int_new:N\l__bna_lead_int
+\NewDocumentCommand\BnTeXAutoOn{}{\bool_set_true:N\l__bna_enabled_bool}
+\NewDocumentCommand\BnTeXAutoOff{}{\bool_set_false:N\l__bna_enabled_bool}
+\cs_new:Npn\__bna_utf:n #1
+ {\char_generate:nn{224+\int_div_truncate:nn{#1}{4096}}{12}
+  \char_generate:nn{128+\int_mod:nn{\int_div_truncate:nn{#1}{64}}{64}}{12}
+  \char_generate:nn{128+\int_mod:nn{#1}{64}}{12}}
+\prg_new_conditional:Npnn\__bna_routed:n #1 {TF}
+ {\bool_if:nTF{\int_compare_p:n{2432<=#1<=2559} ||
+    \int_compare_p:n{#1=2404} || \int_compare_p:n{#1=2405} ||
+    \int_compare_p:n{#1=8204} || \int_compare_p:n{#1=8205}}
+  {\prg_return_true:}{\prg_return_false:}}
+\cs_new_protected:Npn\__bna_start:n #1
+ {\bool_if:NF\l__bna_enabled_bool{\__bn_fail:n{automatic~Bengali~input~is~disabled}}
+  \mode_if_math:T{\__bn_fail:n{Bengali~requires~text~mode;~use~amsmath~text}}
+  \group_begin:\tl_set:Nn\l__bna_run_tl{#1}\int_set:Nn\l__bna_bytes_int{3}
+  \__bna_scan:}
+\cs_new_protected:Npn\__bna_finish:
+ {\exp_args:NV\bnNative\l__bna_run_tl\group_end:}
+\cs_new_protected:Npn\__bna_scan:
+ {\peek_charcode:NTF ^^e0 {\__bna_lead:N}
+   {\peek_charcode:NTF ^^e2 {\__bna_lead:N}{\__bna_finish:}}}
+\cs_new_protected:Npn\__bna_lead:N #1
+ {\tl_set:Nn\l__bna_pending_tl{#1}\int_set:Nn\l__bna_lead_int{`#1}
+  \int_set:Nn\l__bna_cp_int{`#1-224}\int_set:Nn\l__bna_need_int{2}
+  \__bna_next_byte:}
+\cs_new_protected:Npn\__bna_next_byte:
+ {\peek_N_type:TF{\__bna_byte:N}{\__bn_fail:n{truncated~UTF-8~in~automatic~Bengali~run}}}
+\cs_new_protected:Npn\__bna_byte:N #1
+ {\token_if_cs:NT#1{\__bn_fail:n{macro~inside~UTF-8~sequence}}
+  \int_compare:nNnT{`#1}<{128}{\__bn_fail:n{invalid~UTF-8~continuation}}
+  \int_compare:nNnT{`#1}>{191}{\__bn_fail:n{invalid~UTF-8~continuation}}
+  \tl_put_right:Nn\l__bna_pending_tl{#1}
+  \int_set:Nn\l__bna_cp_int{64*\l__bna_cp_int+`#1-128}
+  \int_decr:N\l__bna_need_int
+  \int_compare:nNnTF{\l__bna_need_int}>{0}{\__bna_next_byte:}
+   {\int_compare:nNnT{\l__bna_cp_int}<{2048}{\__bn_fail:n{overlong~UTF-8~sequence}}
+    \__bna_routed:nTF{\l__bna_cp_int}
+     {\tl_put_right:NV\l__bna_run_tl\l__bna_pending_tl
+      \int_add:Nn\l__bna_bytes_int{3}
+      \int_compare:nNnT{\l__bna_bytes_int}>{4096}{\__bn_fail:n{automatic~run~exceeds~4096~bytes}}
+      \__bna_scan:}
+     {\use:e{\exp_not:N\__bna_finish:\exp_not:V\l__bna_pending_tl}}}}
+\cs_new_protected:Npn\__bna_declare:n #1
+ {\use:e{\exp_not:N\DeclareUnicodeCharacter{\int_to_Hex:n{#1}}
+     {\exp_not:N\__bna_start:n{\__bna_utf:n{#1}}}}
+  % PDF strings get original scalars individually, never the typesetter.
+  \tl_gput_right:Nx\g__bna_pdf_setup_tl
+   {\exp_not:N\cs_set:cpn{u8:\__bna_utf:n{#1}}{\exp_not:N\unichar{#1}}}}
+\int_step_inline:nnnn{2432}{1}{2559}{\__bna_declare:n{#1}}
+\clist_map_inline:nn{2404,2405,8204,8205}{\__bna_declare:n{#1}}
+\cs_new_protected:Npn\__bna_hyperref:
+ {\exp_args:NV\pdfstringdefDisableCommands\g__bna_pdf_setup_tl}
+\AddToHook{package/hyperref/after}{\__bna_hyperref:}
+\cs_if_exist:NT\pdfstringdefDisableCommands{\__bna_hyperref:}
+\ExplSyntaxOff
+\endinput

@@ -25,7 +25,7 @@ PUNCT = set(map(ord,' ,.;:!?()-[]\'"/'))|{0x964,0x965,0xa0,0x2013,0x2014,0x2018,
 BASIC = ('nukt','akhn','rphf','rkrf','pref','blwf','abvf','half','pstf','vatu','cjct')
 PRESENTATION = ('init','pres','abvs','blws','psts','haln','calt','rclt','clig','rlig')
 MASK = {tag:1<<i for i,tag in enumerate(('rphf','pref','blwf','abvf','half','pstf','init'))}
-MODULES = ('bntex-native.sty','bntex-native-core.def','bntex-native-sub.def',
+MODULES = ('bntex-auto.sty','bntex-native-styles.sty','bntex-native.sty','bntex-native-core.def','bntex-native-sub.def',
            'bntex-native-reorder.def','bntex-native-position.def','bntex-utf8.def',
            'bntex-native-integration.sty','bntex-native-memo.sty')
 

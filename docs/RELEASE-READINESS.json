@@ -2,12 +2,47 @@
   "schema": 1,
   "purpose": "private-release-readiness",
   "gates": [
-    {"id":"overleaf_browser","status":"pending","evidence":null,"detail":"No authenticated Overleaf browser import and new-word edit has been performed. Local pdfLaTeX and CI are different evidence."},
-    {"id":"second_user","status":"pending","evidence":null,"detail":"A person other than the implementation agent must reproduce the documented installation from a clean source archive."},
-    {"id":"native_visual_review","status":"pending","evidence":null,"detail":"Earlier expanded reference-form acceptance is recorded separately. Native document review must be explicitly attributed and scoped; per-case approvals must not be invented."},
-    {"id":"interactive_performance","status":"blocked","evidence":"docs/NATIVE-DISPATCH-PERFORMANCE.md","detail":"The prior 100-page distinct-token workload exceeded 90 seconds. Extended-budget completion measures throughput but does not satisfy this interactive target."},
-    {"id":"font_distribution_review","status":"pending","evidence":null,"detail":"No font binaries are distributed. Exact supported-font dependency and any compiled-profile redistribution policy need review before public release."},
-    {"id":"package_name_review","status":"pending","evidence":null,"detail":"BnTeX remains a working name. CTAN catalogue/name-confusion review and any maintainer discussion have not been finalized."},
-    {"id":"public_release_authorization","status":"pending","evidence":null,"detail":"Current authorization covers private consolidation and release preparation only, not public GitHub releases, visibility changes, CTAN or PyPI publication."}
+    {
+      "id": "overleaf_browser",
+      "status": "pending",
+      "evidence": null,
+      "detail": "No authenticated Overleaf browser import and new-word edit has been performed. Local pdfLaTeX and CI are different evidence."
+    },
+    {
+      "id": "second_user",
+      "status": "pending",
+      "evidence": null,
+      "detail": "A person other than the implementation agent must reproduce the documented installation from a clean source archive."
+    },
+    {
+      "id": "native_visual_review",
+      "status": "pending",
+      "evidence": "docs/reviews/native-document-dbeab3c.json",
+      "detail": "Maintainer accepted the three-page regular specimen associated with dbeab3c. New automatic/bold/slanted specimens and broader corpus review are not covered; this release gate remains pending."
+    },
+    {
+      "id": "interactive_performance",
+      "status": "blocked",
+      "evidence": "docs/NATIVE-DISPATCH-PERFORMANCE.md",
+      "detail": "The prior 100-page distinct-token workload exceeded 90 seconds. Extended-budget completion measures throughput but does not satisfy this interactive target."
+    },
+    {
+      "id": "font_distribution_review",
+      "status": "pending",
+      "evidence": null,
+      "detail": "No font binaries are distributed. Exact supported-font dependency and any compiled-profile redistribution policy need review before public release."
+    },
+    {
+      "id": "package_name_review",
+      "status": "pending",
+      "evidence": null,
+      "detail": "BnTeX remains a working name. CTAN catalogue/name-confusion review and any maintainer discussion have not been finalized."
+    },
+    {
+      "id": "public_release_authorization",
+      "status": "pending",
+      "evidence": null,
+      "detail": "Current authorization covers private consolidation and release preparation only, not public GitHub releases, visibility changes, CTAN or PyPI publication."
+    }
   ]
 }

@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "kind": "document-level-visual-review",
+  "artifact": "bntex-matcher-document.pdf",
+  "sha256": "100eabdda72c1b69541c26553236d198c374cb83ca3d32dd04c80941cd64248f",
+  "source_commit": "dbeab3c93d01004c0081493bacc6f5cc05912752",
+  "reviewer": "maintainer (user feedback in this conversation)",
+  "statement": "it looks good. what should be next",
+  "scope": "Three-page native regular specimen only. Not a per-case corpus review, new bold/slanted output, independent installation, browser acceptance or release authorization.",
+  "status": "accepted-for-shown-specimen"
+}
