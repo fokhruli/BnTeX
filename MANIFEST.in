@@ -9,3 +9,5 @@ recursive-include corpus *.json *.gz *.md
 prune build
 prune dist
 global-exclude *.ttf *.otf *.ttc *.woff *.woff2 *.tfm *.enc *.pl *.map *.pyc
+
+recursive-include licenses *.txt *.md

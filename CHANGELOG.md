@@ -1,5 +1,15 @@
 # Authoring update (unreleased)
 
+## Unreleased installable-distribution candidate
+
+- Public `bntex` defaults to automatic input and default-profile loading.
+- Explicit `cached` option and `bntex-cached` retain legacy preparation; generated
+  cached projects receive a labelled compatibility shim without source rewriting.
+- Maintainer-only TDS/browsing archive assembly, asset inventory, checked font
+  paths reused for rendering, and document-only relocation tests.
+- Restricted input-read policy, real Overleaf, naming/rights and release approval
+  are still pending. No fonts are added to the source distribution.
+
 - Add opt-in `bntex-auto`: literal Bengali in ordinary mixed text, commands,
   headings and PDF strings without per-passage wrappers.
 - Add the exact Noto Serif Bengali Bold profile and NFSS weight selection.

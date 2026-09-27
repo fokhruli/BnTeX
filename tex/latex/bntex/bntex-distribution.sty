@@ -1,0 +1,32 @@
+%% Checked font-format paths for a complete TeX Live TDS installation. MIT.
+%% Never invokes kpsewhich, changes security settings, or executes a shell.
+\NeedsTeXFormat{LaTeX2e}[2022-06-01]
+\RequirePackage{bntex-native}
+\ProvidesExplPackage{bntex-distribution}{2026-09-26}{0.2.0-alpha}{Installed resource resolver}
+\tl_new:N\l__bnd_path_tl
+\tl_new:N\l__bnd_hash_tl
+\bool_new:N\l__bnd_found_bool
+% These are symbolic Kpathsea roots, not baked-in developer paths. All map and
+% metric references use the SAME verified path, never a second basename lookup.
+\clist_const:Nn\c__bnd_roots_clist
+ {TEXMFCONFIG,TEXMFVAR,TEXMFHOME,TEXMFLOCAL,TEXMFSYSCONFIG,TEXMFSYSVAR,TEXMFDIST}
+\cs_new_protected:Npn\__bnd_probe:nnn #1#2#3
+ {\bool_if:NF\l__bnd_found_bool
+   {\tl_set:Nx\l__bnd_path_tl{\c_dollar_str #1/#2}
+    \tl_set:Nx\l__bnd_hash_tl{\pdfmdfivesum file{\l__bnd_path_tl}}
+    \tl_if_empty:NF\l__bnd_hash_tl
+     {\str_if_eq:VnF\l__bnd_hash_tl{#3}
+       {\__bn_fail:n{installed~asset~changed:~#2}}
+      \bool_set_true:N\l__bnd_found_bool}}}
+\NewDocumentCommand\BnTeXInstalledAsset{mmm}
+ {\bool_set_false:N\l__bnd_found_bool
+  \clist_map_inline:Nn\c__bnd_roots_clist{\__bnd_probe:nnn{##1}{#2}{#3}}
+  \bool_if:NF\l__bnd_found_bool
+   {\__bn_fail:n{installed~asset~unreadable:~#1;~missing~TDS~files~or~read-policy~restriction}}
+  \cs_gset:cpx{__bnd_path_#1}{\exp_not:V\l__bnd_path_tl}}
+\cs_new:Npn\__bnd_path:n #1 {\use:c{__bnd_path_#1}}
+\cs_set:Npn\__bn_metric:n #1 {\__bnd_path:n{#1.tfm}}
+\NewDocumentCommand\BnTeXInstalledMap{mmmm}
+ {\pdfmapline{+#1~#2~<\__bnd_path:n{#3}~<\__bnd_path:n{#4}}}
+\ExplSyntaxOff
+\endinput

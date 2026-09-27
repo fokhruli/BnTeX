@@ -10,7 +10,8 @@ Historical architecture/roadmap snapshots are not a current feature inventory.
 
 - `bntex-native.sty` / `\bnNative` shapes new words in unmodified pdfTeX.
   Its exporter consumes a pinned font/profile only, never document vocabulary.
-- `bntex.sty` / `\bn` retains the cached HarfBuzz preparation contract.
+- Public `bntex.sty` is the installed automatic interface. `bntex-cached.sty`
+  or explicit `[cached]` selects the legacy preparation contract.
 - Preserve original Unicode/byte mappings and logical-order ActualText/PDF strings.
   Do not normalize source keys, remove join controls or infer breakpoints from
   glyph clusters. Keep glyph output native, not images, paths or PDF fragments.
@@ -20,7 +21,7 @@ Historical architecture/roadmap snapshots are not a current feature inventory.
   `bntex-auto` is opt-in by loading the package; normal Bengali needs no wrappers.
   Exactly audited regular/bold fonts are supported. Bold uses its own metrics
   and GPOS; synthetic slant requires explicit `synthetic-italic` consent and must
-  never be described as a true italic face. Keep the legacy default unchanged.
+  never be described as a true italic face. Preserve the legacy backend through its explicit name/option, not as the public default.
 - Optimize measured work without weakening ordering, filtering, contextual
   blocking, bounds, failure policies or the unseen-word/no-helper gate.
 
@@ -48,3 +49,13 @@ browser validation or independent second-user reproduction. Leave unperformed
 gates pending. The release preflight must fail closed with `--require-ready`.
 No automation, fabricated reviewer identity or future background work is implied
 by a checklist. Release preparation is allowed; public publication is not.
+
+## Installed-distribution work
+
+Read docs/distribution/README.md. End users must not run profile compilation or
+manual profile loading. Only maintainer builds generate complete TDS assets.
+The installed resolver verifies and reuses the same symbolic-root font paths;
+it must not skip checks, call runtime helpers, or modify input-read policies.
+Default TeX Live read policy passes; restrictive openin_any=p is an explicit
+unresolved compatibility case. Do not present this as a complete CTAN/Overleaf
+release. Keep generated font trees/archives out of Git and shared source files.

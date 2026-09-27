@@ -58,7 +58,7 @@ def compile_tex(directory, engine, body, *, expected_rc=0, preamble=PREAMBLE):
         assert 'Runaway argument' not in log
         # No word-cache or font-profile input is needed for decoding.
         fls = (directory / 'input.fls').read_text(errors='replace')
-        assert 'bntex-cache' not in fls
+        assert 'bntex-cache.tex' not in fls
     return log
 
 
@@ -289,7 +289,7 @@ def test_require_wrapper_fails_with_numeric_diagnostic(tmp_path, pdftex_engine):
 
 def test_loading_does_not_change_bn_or_global_input_catcodes(tmp_path, pdftex_engine):
     preamble = rb'''\documentclass{article}
-\usepackage{bntex}
+\usepackage[cached]{bntex}
 \let\oldbn\bn
 \edef\oldcat{\the\catcode224}
 \usepackage{bntex-utf8}

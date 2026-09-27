@@ -1,5 +1,7 @@
 # Automatic Bengali input and standard authoring styles
 
+> **Installed-distribution candidate:** the public `\usepackage{bntex}` now selects automatic input and the prebuilt default profile. The project-local compiler/staging commands below are maintainer/developer workflows, not ordinary author setup. The legacy cached entry is `bntex-cached` or `bntex[cached]`. See [distribution/README.md](distribution/README.md) for the current installation boundary and remaining restricted-read/Overleaf acceptance.
+
 Private development feature for issues #15 and #25, built on main `dbeab3c`.
 The maintainer has explicitly activated wrapper-free input and formatting now;
 this supersedes the earlier deferral. No publication is authorized.

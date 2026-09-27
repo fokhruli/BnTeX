@@ -1,0 +1,113 @@
+%% BnTeX 0.1.0-alpha: cached shaping, native TrueType glyphs, pdfLaTeX only.
+%% Copyright 2026 BnTeX contributors. License: MIT (see LICENSE).
+\NeedsTeXFormat{LaTeX2e}[2022-06-01]
+\ProvidesPackage{bntex-cached}[2026/09/23 v0.1.0-alpha Cached Bengali for pdfLaTeX]
+\RequirePackage{iftex}
+\ifPDFTeX\else
+  \PackageError{bntex}{This experimental backend requires pdfLaTeX}
+    {Use the pdfLaTeX compiler. Xe/Lua backends are not included.}
+  \expandafter\endinput
+\fi
+\ifnum\pdfoutput<1
+  \PackageError{bntex}{PDF output is required}{DVI output is not supported.}
+  \expandafter\endinput
+\fi
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\newdimen\bntex@em
+\newbox\bntex@wordbox
+\newif\ifbntex@cacheloaded
+\newcommand\BnTeXCheckFile[2]{%
+  \IfFileExists{#1}{%
+    \edef\bntex@actualhash{\pdfmdfivesum file {#1}}%
+    \edef\bntex@expectedhash{#2}%
+    \ifnum\pdfstrcmp{\bntex@actualhash}{\bntex@expectedhash}=0\relax\else
+      \PackageError{bntex}{Prepared asset changed: #1}
+        {Rebuild the cache; glyph identifiers are specific to the exact font file.}%
+    \fi
+  }{\PackageError{bntex}{Prepared asset missing: #1}{Rebuild and upload the complete build directory.}}%
+}
+% These three commands form the generated-cache protocol, not a public API.
+\newcommand\BnTeXDeclareStyle[2]{%
+  \expandafter\gdef\csname bntex@space@#1\endcsname{#2}%
+}
+\newcommand\BnTeXDeclareWord[7]{%
+  \expandafter\gdef\csname bntex@word@#1@#2\endcsname{%
+    \bntex@word{#3}{#4}{#5}{#6}{#7}}%
+}
+\newcommand\BnTeXGlyph[4]{%
+  \rlap{\kern#3\bntex@em
+    \raise#4\bntex@em\hbox{%
+      \font\bntex@glyphfont=#1 at \bntex@em\relax
+      \bntex@glyphfont\char#2\relax}}%
+}
+\newcommand\bntex@word[5]{%
+  \setbox\bntex@wordbox=\hbox to #1\bntex@em{%
+    \pdfliteral direct{/Span << /ActualText <FEFF#4> >> BDC}%
+    #5\hss
+    \pdfliteral direct{EMC}}%
+  \ht\bntex@wordbox=#2\bntex@em
+  \dp\bntex@wordbox=#3\bntex@em
+  \box\bntex@wordbox
+}
+\newcommand\BnTeXLoadCache[1]{%
+  \ifbntex@cacheloaded
+    \PackageError{bntex}{Only one cache may be loaded in this version}
+      {Combine sources and styles in one preparation step.}%
+  \else
+    \InputIfFileExists{#1}{\global\bntex@cacheloadedtrue}
+      {\PackageError{bntex}{Cache not found: #1}{Run python -m bntex prepare first.}}%
+  \fi
+}
+\ExplSyntaxOn
+\tl_new:N \l__bntex_style_tl
+\tl_new:N \l__bntex_input_tl
+\seq_new:N \l__bntex_words_seq
+\bool_new:N \l__bntex_first_bool
+\cs_new_protected:Npn \__bntex_typeset:nn #1#2
+  {
+    \group_begin:
+    \mode_if_math:T
+      {\PackageError{bntex}{Use~bn~in~text~mode,~not~math~mode}
+         {Use~amsmath's~text~command~around~a~Bengali~span.}}
+    \tl_set:Nn \l__bntex_style_tl {#1}
+    \str_if_eq:nnT {#1}{auto}
+      {
+        \tl_set:Nn \l__bntex_style_tl {regular}
+        \str_case_e:nn {\f@series}
+          {{b}{\tl_set:Nn \l__bntex_style_tl {bold}}
+           {bx}{\tl_set:Nn \l__bntex_style_tl {bold}}}
+        \str_if_eq:eeF {\f@shape}{n}
+          {\PackageError{bntex}{No~automatic~italic/slanted~font~profile}
+             {Choose~an~explicit~prepared~style~or~use~upright~text.}}
+      }
+    \cs_if_exist:cTF {bntex@space@\l__bntex_style_tl}
+      {
+        \bntex@em=\f@size pt\relax
+        \tl_set:Nx \l__bntex_input_tl {\tl_to_str:n {#2}}
+        \seq_set_split:NnV \l__bntex_words_seq {~} \l__bntex_input_tl
+        \bool_set_true:N \l__bntex_first_bool
+        \leavevmode
+        \seq_map_inline:Nn \l__bntex_words_seq
+          {
+            \tl_if_empty:nF {##1}
+              {
+                \bool_if:NF \l__bntex_first_bool
+                  {\hskip \use:c {bntex@space@\l__bntex_style_tl}\bntex@em
+                    plus .12\bntex@em minus .08\bntex@em\relax}
+                \bool_set_false:N \l__bntex_first_bool
+                \cs_if_exist:cTF
+                  {bntex@word@\l__bntex_style_tl @\pdfmdfivesum{##1}}
+                  {\use:c {bntex@word@\l__bntex_style_tl @\pdfmdfivesum{##1}}}
+                  {\PackageError{bntex}{Uncached~Bengali~word~in~style~\l__bntex_style_tl}
+                     {Re-run~the~preparer~after~adding~a~new~word.~No~fallback~shaping~is~performed.}}
+              }
+          }
+      }
+      {\PackageError{bntex}{Style~\l__bntex_style_tl~was~not~prepared}
+        {Load~the~cache~and~prepare~the~requested~font~style.}}
+    \group_end:
+  }
+\NewDocumentCommand \bn {O{auto}m} {\__bntex_typeset:nn {#1}{#2}}
+\ExplSyntaxOff
+\endinput

@@ -1,5 +1,7 @@
 # Current roadmap and acceptance status
 
+> **Installed-distribution candidate:** the public `\usepackage{bntex}` now selects automatic input and the prebuilt default profile. The project-local compiler/staging commands below are maintainer/developer workflows, not ordinary author setup. The legacy cached entry is `bntex-cached` or `bntex[cached]`. See [distribution/README.md](distribution/README.md) for the current installation boundary and remaining restricted-read/Overleaf acceptance.
+
 The original bootstrap roadmap is preserved byte-for-byte as
 `ROADMAP-ORIGINAL.md`. It documents the original plan, not current feature status.
 Current engineering work uses main as the integration base and topic PRs for
