@@ -2,12 +2,13 @@
 
 No program search path, source checkout TEXINPUTS, or project-local assets are
 provided to pdfTeX. The default Kpathsea read policy is tested, not overwritten.
-Restricted-read failure is an explicit unresolved acceptance case.
+Restricted-read behavior is probed independently because pdfTeX versions differ.
 """
 from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -97,9 +98,14 @@ def test_move_entire_tree_and_compile_again(tds,tmp_path):
 @pytest.mark.parametrize('fault',['missing','changed'])
 def test_missing_and_changed_assets_fail(tds,tmp_path,suffix,fault):
     tree=tmp_path/'tree';shutil.copytree(tds,tree)
-    # Select manifest-checked files, not the wrapper/loader self bootstrap.
-    patterns={'.sty':'bntex-native-styles.sty','.def':'bntex-native-tables.def'}
-    file=next(tree.rglob(patterns.get(suffix,'bnf*'+suffix)))
+    # Select runtime files explicitly: the TDS includes reproducible .sty
+    # sources too, and filesystem traversal order is not stable across hosts.
+    names={'.sty':'bntex-native-styles.sty','.def':'bntex-native-tables.def',
+           '.ttf':'bnf'+FONT_SHA[:16]+'.ttf',
+           '.tfm':'bnf'+FONT_SHA[:16]+'b0.tfm',
+           '.enc':'bnf'+FONT_SHA[:16]+'b0.enc'}
+    file=tree/d.tds_path(names[suffix])
+    assert file.is_file() and not file.is_relative_to(tree/d.SOURCE_DIR)
     if fault=='missing':file.unlink()
     else:file.write_bytes(file.read_bytes()+b'\n% accidental change\n')
     rc,log=run(tree,tmp_path/'doc');assert rc!=0
@@ -115,12 +121,66 @@ def test_verified_full_paths_do_not_load_local_font_shadow(tds,tmp_path):
     assert 'বাংলা আমাদের মাতৃভাষা।' in text(folder)
 
 
-def test_restrictive_read_policy_fails_without_relaxation(tds,tmp_path):
+def restrictive_checksum_probe(tree, folder):
+    """Measure the engine primitive before testing the package under that policy.
+
+    This does not infer capabilities from a release number or accept an arbitrary
+    package failure. A readable primitive must agree with the actual file hash.
+    """
+    assets=sorted(p for dirname in d.FONT_DIRS.values()
+                  for p in (tree/dirname).iterdir() if p.is_file())
+    lines=[r'\documentclass{article}\begin{document}Probe.']
+    for i,path in enumerate(assets):
+        name='$TEXMFHOME/'+str(path.relative_to(tree))
+        lines.append(r'\typeout{BNTEX-READ|'+str(i)+r'|\pdfmdfivesum file{'+name+'}}')
+    lines.append(r'\end{document}')
+    rc,log=run(tree,folder,'\n'.join(lines),read_policy='p')
+    assert rc==0,log[-4000:]
+    observed=dict((int(i),value) for i,value in re.findall(r'BNTEX-READ\|(\d+)\|([0-9A-F]*)',log))
+    assert set(observed)==set(range(len(assets)))
+    expected={i:hashlib.md5(p.read_bytes()).hexdigest().upper() for i,p in enumerate(assets)}
+    assert all(value in ('',expected[i]) for i,value in observed.items())
+    return all(observed.values()),log.splitlines()[0]
+
+
+@pytest.mark.parametrize('suffix',['.ttf','.tfm','.enc'])
+def test_restrictive_read_policy_matches_primitive_without_relaxation(tds,tmp_path,suffix):
+    readable,banner=restrictive_checksum_probe(tds,tmp_path/'probe')
     rc,log=run(tds,tmp_path/'doc',read_policy='p')
-    assert rc!=0 and 'read-policy' in log
-    assert not (tmp_path/'doc/main.pdf').exists()
+    print(f'BNTEX-READ-POLICY|p|readable={readable}|{banner}')
+    if readable:
+        # TeX Live 2023 in CI allows these paths. Verify real rendering AND
+        # corruption rejection rather than demanding a version-specific error.
+        assert rc==0,log[-8000:]
+        assert 'বাংলা আমাদের মাতৃভাষা।' in text(tmp_path/'doc')
+        tree=tmp_path/'damaged';shutil.copytree(tds,tree)
+        name='bnf'+FONT_SHA[:16]+('' if suffix=='.ttf' else 'b0')+suffix
+        path=tree/d.tds_path(name);path.write_bytes(path.read_bytes()+b'corrupt')
+        rc,log=run(tree,tmp_path/'damaged-doc',read_policy='p')
+        assert rc!=0 and 'installed asset changed:' in log
+        assert not (tmp_path/'damaged-doc/main.pdf').exists()
+    else:
+        # The locally tested newer primitive refuses these symbolic paths.
+        assert rc!=0 and 'read-policy' in log
+        assert not (tmp_path/'doc/main.pdf').exists()
     code=(ROOT/'tex/latex/bntex/bntex-distribution.sty').read_text()
     assert 'write18' not in code and 'openin_any=' not in code
+
+
+def test_runtime_corruption_does_not_depend_on_source_copy_order(tds,tmp_path):
+    tree=tmp_path/'tree';shutil.copytree(tds,tree)
+    name='bntex-native-styles.sty'
+    runtime=tree/d.TEX_DIR/name
+    source=tree/d.SOURCE_DIR/'bntex/data'/name
+    assert runtime.read_bytes()==source.read_bytes()
+    # Breaking the non-executed reproducible source must not alter rendering.
+    source.write_bytes(b'not executable TeX source')
+    rc,log=run(tree,tmp_path/'source-damaged-doc');assert rc==0,log[-4000:]
+    # Restore source, then corrupt runtime: the inverse MUST fail at runtime.
+    source.write_bytes(runtime.read_bytes())
+    runtime.write_bytes(runtime.read_bytes()+b'\n% runtime changed\n')
+    rc,log=run(tree,tmp_path/'runtime-damaged-doc')
+    assert rc!=0 and not (tmp_path/'runtime-damaged-doc/main.pdf').exists()
 
 
 def test_missing_default_profile_does_not_select_cached(tds,tmp_path):

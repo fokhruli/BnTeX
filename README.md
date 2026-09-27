@@ -35,8 +35,9 @@ not run Python or load a profile explicitly. The maintainer-only distribution
 builder supplies precompiled runtime data and audited Regular/Bold assets.
 This source repository itself is not a complete font installation or a CTAN
 release. Read `docs/distribution/README.md` and the installation manual source.
-Default TeX Live root relocation is tested; restrictive `openin_any=p`, actual
-Overleaf, independent acceptance and release approval remain unresolved.
+Default TeX Live root relocation is tested. Restrictive `openin_any=p` is
+engine-dependent and separately probed; actual Overleaf, independent acceptance
+and release approval remain unresolved.
 
 **Migration:** `\usepackage[cached]{bntex}` or `bntex-cached` explicitly selects
 the old prepared-word backend. Old flat prepared projects keep an explicitly

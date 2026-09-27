@@ -56,6 +56,6 @@ Read docs/distribution/README.md. End users must not run profile compilation or
 manual profile loading. Only maintainer builds generate complete TDS assets.
 The installed resolver verifies and reuses the same symbolic-root font paths;
 it must not skip checks, call runtime helpers, or modify input-read policies.
-Default TeX Live read policy passes; restrictive openin_any=p is an explicit
-unresolved compatibility case. Do not present this as a complete CTAN/Overleaf
+Default TeX Live read policy passes; restrictive openin_any=p is engine-dependent.
+Probe primitive capability before requiring either checked success or clear error. Do not present this as a complete CTAN/Overleaf
 release. Keep generated font trees/archives out of Git and shared source files.

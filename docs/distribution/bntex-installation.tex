@@ -91,11 +91,12 @@ MD5 guards detect accidental drift, not an adversarial coordinated replacement.
 A SHA-256 manifest inventories the complete local distribution. The manifest is
 not a digital signature. Installation and package-manager trust remain necessary.
 
-\textbf{Current read-policy limit.} This candidate targets TeX Live's normal
-input-read policy. The stricter \texttt{openin\_any=p} mode rejects the symbolic
-root paths used by pdfTeX's checksum primitive. It therefore fails explicitly
-rather than skipping verification or changing the security setting. This is a
-separate compatibility limitation; do not claim a restricted-policy pass.
+\textbf{Read-policy compatibility.} Normal TeX Live input policy is tested.
+Under \texttt{openin\_any=p}, the local pdfTeX 1.40.26 refuses symbolic-root
+checksums, while the TeX Live 2023 CI engine permits them. Tests independently
+probe the primitive and require rendering plus corruption rejection when
+readable, or a clear error otherwise. The package never relaxes the policy
+or skips integrity checks. This is not an all-platform compatibility claim.
 Custom search trees outside the documented standard roots and MiKTeX are not
 yet validated. The code does not invoke a shell or \texttt{kpsewhich} at runtime.
 

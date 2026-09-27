@@ -141,7 +141,7 @@ def assemble(regular_font: Path, bold_font: Path, out: Path, *,
                   'font_delivery':'audited unchanged outlines in the complete maintainer-built distribution',
                   'author_setup':'usepackage{bntex}; no profile compiler or manual profile loading',
                   'runtime_python':False,'runtime_shell':False,'vocabulary':None,
-                  'read_policy':'TeX Live default input policy; restrictive openin_any=p not yet supported',
+                  'read_policy':'TeX Live default input policy; restrictive openin_any=p is engine-dependent and separately probed',
                   'browser_test':'not-performed','publication_authorized':False,'files':records}
         mp=tree/DOC_DIR/'distribution-manifest.json'
         mp.write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')

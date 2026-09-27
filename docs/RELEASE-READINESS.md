@@ -89,9 +89,11 @@ It never uploads them. Source-review ZIPs remain font-free and are not those
 font-containing installation archives.
 
 The old generic-font-file lookup failure is addressed for normal TeX Live roots
-under its default read policy. Strict `openin_any=p` still rejects the symbolic
-root paths before checksumming. The implementation fails rather than changing
-that policy or bypassing checks. See docs/distribution/README.md. Actual browser
+under its default read policy. Strict `openin_any=p` is engine-dependent:
+the local pdfTeX 1.40.26 rejects symbolic-root checksums while the CI TeX Live
+2023 engine permits them. A separate primitive probe determines the expected
+package outcome and tests corruption rejection for readable installations.
+No policy is changed or check skipped. See docs/distribution/README.md. Browser
 and distribution-maintainer review must establish whether the target environment
 accepts this mechanism; current package readiness is not inferred from local
 TDS success. No gate in RELEASE-READINESS.json is marked passed.
