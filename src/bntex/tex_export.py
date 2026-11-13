@@ -27,7 +27,7 @@ PRESENTATION = ('init','pres','abvs','blws','psts','haln','calt','rclt','clig','
 MASK = {tag:1<<i for i,tag in enumerate(('rphf','pref','blwf','abvf','half','pstf','init'))}
 MODULES = ('bntex-auto.sty','bntex-native-styles.sty','bntex-native.sty','bntex-native-core.def','bntex-native-sub.def',
            'bntex-native-reorder.def','bntex-native-position.def','bntex-utf8.def',
-           'bntex-native-integration.sty','bntex-native-memo.sty')
+           'bntex-native-integration.sty','bntex-native-memo.sty','bntex-native-reuse.sty')
 
 def properties(cp):
     if cp in CONSONANTS:return ('R' if cp==0x9b0 else 'C'),BASE

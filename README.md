@@ -39,6 +39,12 @@ Default TeX Live root relocation is tested. Restrictive `openin_any=p` is
 engine-dependent and separately probed; actual Overleaf, independent acceptance
 and release approval remain unresolved.
 
+**Recompilation speed:** `bntex` keeps shaped words in `\jobname.bnc` (beside
+the `.aux` file), so a recompilation only shapes new words. It is optional and
+safe to delete, ignored if written by a different installation, and produces
+identical output; `[no-word-cache]` turns it off. See
+`docs/distribution/README.md`.
+
 **Migration:** `\usepackage[cached]{bntex}` or `bntex-cached` explicitly selects
 the old prepared-word backend. Old flat prepared projects keep an explicitly
 labelled local shim; an old project-local `bntex.sty` shadows the installed one.

@@ -1,0 +1,167 @@
+%% Glyph-run cache: constant-time reuse within a run and across compilations.
+%% Copyright 2026 BnTeX contributors. MIT; see LICENSE.
+%%
+%% A shaped word is stored once per exact installed face and exact original
+%% bytes, and is written to \jobname.bnc for the next compilation. The file is
+%% an optional accelerator, never a required word list: deleting it only makes
+%% the next compilation shape every word again. It is tied to the MD5 of the
+%% loaded profile loader, which itself pins every module and font, so any other
+%% installation ignores it. Each line carries an MD5 of its contents to detect
+%% truncation or damage; this is not authentication of hostile project files.
+\NeedsTeXFormat{LaTeX2e}[2022-06-01]
+\RequirePackage{bntex-native}
+\ProvidesExplPackage{bntex-native-reuse}{2026-11-13}{0.1.0}{Glyph-run cache reused across compilations}
+\cs_if_exist:NF\__bn_shape_word:n{\__bn_fail:n{matching~native~decoded-word~hook~is~required}}
+\bool_new:N\g__bnc_enabled_bool
+\bool_gset_true:N\g__bnc_enabled_bool
+\bool_new:N\g__bnc_persist_bool
+\bool_gset_true:N\g__bnc_persist_bool
+\bool_new:N\g__bnc_writing_bool
+\int_new:N\g__bnc_hits_int
+\int_new:N\g__bnc_misses_int
+\int_new:N\g__bnc_entries_int
+\int_new:N\g__bnc_loaded_int
+\int_new:N\g__bnc_rejected_int
+\int_new:N\g__bnc_written_int
+\int_new:N\l__bnc_index_int
+% Bounded by TeX's main memory and string pool, not by any vocabulary.
+\int_const:Nn\c__bnc_limit_int{15000}
+\tl_new:N\g__bnc_identity_tl
+\tl_new:N\l__bnc_hex_tl
+\tl_new:N\l__bnc_key_tl
+\tl_new:N\l__bnc_line_tl
+\ior_new:N\g__bnc_ior
+\iow_new:N\g__bnc_iow
+\str_const:Nx\c__bnc_file_str{\c_sys_jobname_str.bnc}
+\NewDocumentCommand\BnTeXCacheOff{}{\bool_gset_false:N\g__bnc_enabled_bool}
+\NewDocumentCommand\BnTeXCacheOn{}{\bool_gset_true:N\g__bnc_enabled_bool}
+\NewDocumentCommand\BnTeXCacheNoFile{}
+ {\bool_if:NT\g__bnc_writing_bool{\__bn_fail:n{BnTeXCacheNoFile~belongs~in~the~preamble}}
+  \bool_gset_false:N\g__bnc_persist_bool}
+\NewDocumentCommand\BnTeXCacheStats{}
+ {\iow_term:x{BNTEX-CACHE|hits=\int_use:N\g__bnc_hits_int|misses=\int_use:N\g__bnc_misses_int
+   |entries=\int_use:N\g__bnc_entries_int|loaded=\int_use:N\g__bnc_loaded_int
+   |rejected=\int_use:N\g__bnc_rejected_int|written=\int_use:N\g__bnc_written_int}}
+% ---- Entries. The face is the installed font prefix (one per audited face);
+% size, colour and declared slant are applied when rendering, as in the memo.
+\cs_new_protected:Npn\__bnc_key:n #1
+ {\tl_set:Nx\l__bnc_hex_tl{\pdfescapehex{#1}}
+  \tl_set:Nx\l__bnc_key_tl{\__bn_font_prefix:/\l__bnc_hex_tl}}
+\cs_new_protected:Npn\__bnc_restore:nn #1#2
+ {\int_gset:Nn\g__bn_count_int{#1}\int_gset:Nn\g__bn_allocated_int{#1}\int_gzero:N\g__bn_ops_int
+  \tl_gset_eq:NN\g__bn_original_hex_tl\l__bnc_hex_tl\tl_gset:Nn\g__bn_utf_sixteen_tl{#2}
+  \int_zero:N\l__bnc_index_int}
+\cs_new_protected:Npn\__bnc_g:nnnnnnn #1#2#3#4#5#6#7
+ {\int_incr:N\l__bnc_index_int
+  \intarray_gset:Nnn\g__bn_order_intarray{\l__bnc_index_int}{\l__bnc_index_int}
+  \intarray_gset:Nnn\g__bn_gid_intarray{\l__bnc_index_int}{#1}
+  \intarray_gset:Nnn\g__bn_cl_intarray{\l__bnc_index_int}{#2}
+  \intarray_gset:Nnn\g__bn_ax_intarray{\l__bnc_index_int}{#3}
+  \intarray_gset:Nnn\g__bn_ay_intarray{\l__bnc_index_int}{#4}
+  \intarray_gset:Nnn\g__bn_dx_intarray{\l__bnc_index_int}{#5}
+  \intarray_gset:Nnn\g__bn_dy_intarray{\l__bnc_index_int}{#6}
+  \intarray_gset:Nnn\g__bn_unsafe_intarray{\l__bnc_index_int}{#7}}
+\cs_new:Npn\__bnc_glyph_tokens:n #1
+ {\exp_not:N\__bnc_g:nnnnnnn{\__bn_get:nn{#1}{gid}}{\__bn_get:nn{#1}{cl}}
+  {\__bn_get:nn{#1}{ax}}{\__bn_get:nn{#1}{ay}}{\__bn_get:nn{#1}{dx}}
+  {\__bn_get:nn{#1}{dy}}{\__bn_get:nn{#1}{unsafe}}}
+\cs_new:Npn\__bnc_glyph_text:n #1
+ {\int_compare:nNnF{#1}={0}{;}\__bn_get:nn{#1}{gid},\__bn_get:nn{#1}{cl},\__bn_get:nn{#1}{ax},
+  \__bn_get:nn{#1}{ay},\__bn_get:nn{#1}{dx},\__bn_get:nn{#1}{dy},\__bn_get:nn{#1}{unsafe}}
+% The memo's existing bound: longer runs are shaped every time, never cached.
+\prg_new_conditional:Npnn\__bnc_storable:{p,T}
+ {\int_compare:nNnTF{\g__bn_count_int}<{129}{\prg_return_true:}{\prg_return_false:}}
+\cs_new_protected:Npn\__bnc_store:
+ {\bool_lazy_and:nnT{\__bnc_storable_p:}{\int_compare_p:nNn{\g__bnc_entries_int}<{\c__bnc_limit_int}}
+   {\int_gincr:N\g__bnc_entries_int
+    \cs_gset:cpx{g__bnc_r_\l__bnc_key_tl}
+     {\exp_not:N\__bnc_restore:nn{\int_use:N\g__bn_count_int}{\exp_not:V\g__bn_utf_sixteen_tl}
+      \int_step_function:nnnN{0}{1}{\g__bn_count_int-1}\__bnc_glyph_tokens:n}}}
+\cs_new_protected:Npn\__bnc_write:
+ {\bool_if:NT\g__bnc_writing_bool
+   {\cs_if_exist:cF{g__bnc_u_\l__bnc_key_tl}
+     {\cs_gset_eq:cN{g__bnc_u_\l__bnc_key_tl}\prg_do_nothing:
+      \__bnc_storable:T
+       {\tl_set:Nx\l__bnc_line_tl
+         {\__bn_font_prefix:|\l__bnc_hex_tl|\int_use:N\g__bn_count_int|\g__bn_utf_sixteen_tl|
+          \int_step_function:nnnN{0}{1}{\g__bn_count_int-1}\__bnc_glyph_text:n}
+        \iow_now:Nx\g__bnc_iow{R|\pdfmdfivesum{\l__bnc_line_tl}|\l__bnc_line_tl}
+        \int_gincr:N\g__bnc_written_int}}}}
+\cs_new_protected:Npn\__bnc_word:n #1
+ {\bool_if:NF\g__bn_loaded_bool{\__bn_fail:n{load~a~native~profile~first}}
+  \bool_if:NT\g__bn_busy_bool{\__bn_fail:n{nested~native~shaping~is~unsupported}}
+  \bool_if:nTF{\g__bnc_enabled_bool && !\g__bn_trace_bool}
+   {\group_begin:
+    \__bnc_key:n{\detokenize{#1}}
+    \cs_if_exist_use:cTF{g__bnc_r_\l__bnc_key_tl}
+     {\int_gincr:N\g__bnc_hits_int}
+     {\int_gincr:N\g__bnc_misses_int\__bn_shape_word:n{#1}\__bnc_store:}
+    \__bnc_write:
+    \__bn_render:\group_end:}
+   {\__bn_shape_word:n{#1}\__bn_render:}}
+\cs_set_eq:NN\__bn_typeset_word:n\__bnc_word:n
+% Automatic input (bntex-auto): a connected run never contains a space, so it is
+% exactly one word. Its scanner has already validated the UTF-8 bytes; on a hit
+% for those exact bytes and face, restore and render directly instead of
+% decoding the run again in \bnNative. A miss takes the unchanged \bnNative path.
+\cs_new_protected:Npn\__bnc_auto_finish:
+ {\bool_if:nTF{\g__bnc_enabled_bool && \g__bn_loaded_bool && !\g__bn_trace_bool && !\g__bn_busy_bool}
+   {\group_begin:
+    \__bn_select_style:
+    \__bnc_key:n{\tl_to_str:N\l__bna_run_tl}
+    \cs_if_exist:cTF{g__bnc_r_\l__bnc_key_tl}
+     {\mode_leave_vertical:
+      \use:c{g__bnc_r_\l__bnc_key_tl}\int_gincr:N\g__bnc_hits_int
+      \__bnc_write:\__bn_render:
+      \group_end:\group_end:}
+     {\group_end:\__bnc_saved_auto_finish:}}
+   {\__bnc_saved_auto_finish:}}
+\cs_new_protected:Npn\__bnc_install_auto:
+ {\cs_if_exist:NT\__bna_finish:
+   {\cs_if_exist:NF\__bnc_saved_auto_finish:
+     {\cs_new_eq:NN\__bnc_saved_auto_finish:\__bna_finish:
+      \cs_set_eq:NN\__bna_finish:\__bnc_auto_finish:}}}
+% ---- Reading and writing \jobname.bnc (one line per word used in this run).
+\cs_new_protected:Npn\__bnc_identity:
+ {\tl_gset:Nx\g__bnc_identity_tl
+   {bntex-native-reuse/1/\pdfmdfivesum file{\g__bn_profile_file_tl}}}
+\cs_new_protected:Npn\__bnc_read_line:n #1
+ {\__bnc_read_split:w #1|||\q_stop}
+\cs_new_protected:Npn\__bnc_read_split:w #1|#2|#3\q_stop
+ {\str_if_eq:nnT{#1}{R}{\__bnc_read_entry:nw{#2}#3\q_stop}}
+\cs_new_protected:Npn\__bnc_read_entry:nw #1#2|||\q_stop
+ {\str_if_eq:eeTF{\pdfmdfivesum{#2}}{#1}
+   {\__bnc_parse:w #2\q_stop}{\int_gincr:N\g__bnc_rejected_int}}
+\cs_new_protected:Npn\__bnc_parse:w #1|#2|#3|#4|#5\q_stop
+ {\bool_lazy_and:nnTF
+   {\str_if_eq_p:ee{\pdfescapehex{\pdfunescapehex{#2}}}{#2}}
+   {\str_if_eq_p:ee{\pdfescapehex{\pdfunescapehex{#4}}}{#4}}
+   {\int_compare:nNnT{\g__bnc_entries_int}<{\c__bnc_limit_int}
+     {\int_gincr:N\g__bnc_entries_int\int_gincr:N\g__bnc_loaded_int
+      \cs_gset:cpx{g__bnc_r_#1/#2}
+       {\exp_not:N\__bnc_restore:nn{#3}{#4}\__bnc_parse_glyphs:w #5;\q_stop}}}
+   {\int_gincr:N\g__bnc_rejected_int}}
+\cs_new:Npn\__bnc_parse_glyphs:w #1;#2\q_stop
+ {\__bnc_parse_glyph:w #1\q_stop
+  \tl_if_blank:nF{#2}{\__bnc_parse_glyphs:w #2\q_stop}}
+\cs_new:Npn\__bnc_parse_glyph:w #1,#2,#3,#4,#5,#6,#7\q_stop
+ {\exp_not:N\__bnc_g:nnnnnnn{#1}{#2}{#3}{#4}{#5}{#6}{#7}}
+\cs_new_protected:Npn\__bnc_load:
+ {\IfPackageLoadedT{bntex-native-memo}
+   {\__bn_fail:n{load~either~bntex-native-memo~or~bntex-native-reuse,~not~both}}
+  \bool_if:NT\g__bnc_persist_bool
+   {\bool_if:NF\g__bn_loaded_bool{\__bn_fail:n{load~a~native~profile~before~begin~document}}
+    \__bnc_identity:
+    \ior_open:NnT\g__bnc_ior{\c__bnc_file_str}
+     {\ior_str_get:NN\g__bnc_ior\l__bnc_line_tl
+      \str_if_eq:eeT{\l__bnc_line_tl}{BNTEXCACHE|\g__bnc_identity_tl}
+       {\ior_str_map_inline:Nn\g__bnc_ior{\__bnc_read_line:n{##1}}}
+      \ior_close:N\g__bnc_ior}
+    \iow_open:Nn\g__bnc_iow{\c__bnc_file_str}
+    \iow_now:Nx\g__bnc_iow{BNTEXCACHE|\g__bnc_identity_tl}
+    \bool_gset_true:N\g__bnc_writing_bool}}
+\AddToHook{begindocument}{\__bnc_install_auto:\__bnc_load:}
+\AddToHook{enddocument/afterlastpage}
+ {\bool_if:NT\g__bnc_writing_bool{\iow_close:N\g__bnc_iow\bool_gset_false:N\g__bnc_writing_bool}}
+\ExplSyntaxOff
+\endinput

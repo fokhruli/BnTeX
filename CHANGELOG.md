@@ -20,6 +20,13 @@
   the document (project upload) under the same pinned MD5 check. MiKTeX does not
   expand `$TEXMF...` roots and its input search does not reach `fonts/`, so a
   real MiKTeX TDS installation is still unresolved.
+- Add `bntex-native-reuse`, loaded by `bntex` by default (`no-word-cache`
+  disables it): constant-time glyph-run reuse within a compilation and across
+  compilations through `\jobname.bnc`, keyed on the installation's profile
+  loader MD5 with per-line MD5 checks. On Windows/MiKTeX a 4,984-word document
+  went from 37–50 s to 2.8 s on recompilation, a 623-word one from 5.1 s to
+  0.9 s; PDF page content is identical with the cache cold, warm or disabled.
+  For automatic input, a cache hit skips the second UTF-8 decode in `\bnNative`.
 
 - Add opt-in `bntex-auto`: literal Bengali in ordinary mixed text, commands,
   headings and PDF strings without per-passage wrappers.

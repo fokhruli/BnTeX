@@ -31,8 +31,12 @@
   \str_if_eq:nnF{#2}{32b4aeb731e3819d7a31216c885208a96e402ceeebb30fc39723b99220708fef}{\__bn_fail:n{font~identity}}
   \str_if_eq:nnF{#3}{f6294540099a3b6f622f2cdd9e863050390f75fd0576495d5a2316903f8cfb42}{\__bn_fail:n{profile~identity}}
   \bool_gset_true:N\g__bn_loaded_bool}
+% The loader's own name identifies the complete installation (it pins every
+% module and font by MD5); the optional glyph-run cache keys its file on it.
+\tl_new:N\g__bn_profile_file_tl
 \NewDocumentCommand\BnTeXNativeLoadProfile{m}
  {\bool_if:NT\g__bn_loaded_bool{\__bn_fail:n{only~one~native~profile~may~be~loaded}}
+  \tl_gset:Nn\g__bn_profile_file_tl{#1}
   \file_if_exist:nTF{#1}{\file_input:n{#1}}{\__bn_fail:n{profile~file~missing}}}
 \NewDocumentCommand\BnTeXNativeTraceOn{}{\bool_gset_true:N\g__bn_trace_bool}
 \NewDocumentCommand\BnTeXNativeTraceOff{}{\bool_gset_false:N\g__bn_trace_bool}

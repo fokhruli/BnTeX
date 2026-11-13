@@ -3,10 +3,13 @@
 \ProvidesPackage{bntex}[2026/09/26 v0.2.0-alpha Installed automatic Bengali for pdfLaTeX]
 \newif\ifbntex@legacy
 \newif\ifbntex@slant
+\newif\ifbntex@wordcache\bntex@wordcachetrue
 \DeclareOption{cached}{\bntex@legacytrue}
 \DeclareOption{synthetic-italic}{\bntex@slanttrue}
+% The glyph-run cache (\jobname.bnc) only speeds up later compilations.
+\DeclareOption{no-word-cache}{\bntex@wordcachefalse}
 \DeclareOption*{\PackageError{bntex}{Unknown option \CurrentOption}
-  {Supported options are cached and synthetic-italic.}}
+  {Supported options are cached, synthetic-italic and no-word-cache.}}
 \ProcessOptions\relax
 \ifbntex@legacy
   \ifbntex@slant
@@ -17,6 +20,7 @@
 \else
   \ifbntex@slant\PassOptionsToPackage{synthetic-italic}{bntex-auto}\fi
   \RequirePackage{bntex-auto}
+  \ifbntex@wordcache\RequirePackage{bntex-native-reuse}\fi
   \RequirePackage{bntex-distribution}
   \IfFileExists{bntex-default-profile.def}
     {\BnTeXNativeLoadProfile{bntex-default-profile.def}}
