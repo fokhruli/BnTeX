@@ -258,8 +258,47 @@ def verify(root: Path) -> dict:
     return m
 
 
+OVERLEAF_README = b"""# BnTeX starter project
+
+Upload this ZIP with Overleaf's New Project > Upload Project, keep the compiler
+set to pdfLaTeX, and edit main.tex. Write Bengali and English directly in the
+text; no wrapper commands are needed.
+
+Keep the bntex*.sty, *.def, *.tex, *.tfm, *.enc and *.ttf files in the
+project's top folder: BnTeX looks for them beside main.tex and checks each one
+against the MD5 recorded for this release. Do not edit them.
+
+The first compile shapes every distinct word (about 100 words per second);
+later compiles reuse the shaped words stored in main.bnc and only shape new
+ones. Deleting main.bnc is always safe.
+
+The same files work locally beside any document (TeX Live or MiKTeX).
+Fonts: Noto Serif Bengali Regular and Bold, SIL Open Font License 1.1; code:
+MIT. See licenses/.
+"""
+
+
+def overleaf_starter(runtime: dict[str, bytes]) -> dict[str, bytes]:
+    """Flat project layout: runtime files beside main.tex, as an upload needs.
+
+    The installed resolver's bare-name fallback finds and MD5-checks them.
+    """
+    items = {}
+    for name, raw in runtime.items():
+        if name.startswith(TEX_DIR + '/') or any(name.startswith(d + '/') for d in FONT_DIRS.values()):
+            base = name.rsplit('/', 1)[1]
+            if base in items:
+                raise ValueError('Starter project path collision')
+            items[base] = raw
+    items['main.tex'] = runtime[DOC_DIR + '/bntex-example.tex']
+    items['README.md'] = OVERLEAF_README
+    for n in ('OFL-1.1.txt', 'FONT-NOTICES.md', 'LICENSE', 'THIRD-PARTY-NOTICES.md'):
+        items['licenses/' + n] = runtime[DOC_DIR + '/' + n]
+    return items
+
+
 def pack(root: Path, out: Path) -> dict:
-    """Create complete local TDS and browsing archives for maintainer review.
+    """Create complete local TDS, browsing and Overleaf-starter archives.
 
     Font-containing archives are build outputs, never source attachments. This
     function cannot authorize or perform a public upload.
@@ -290,6 +329,7 @@ def pack(root: Path, out: Path) -> dict:
             browse[dest]=raw
         browse['bntex.tds.zip']=(stage/'bntex.tds.zip').read_bytes()
         zipwrite(stage/'bntex-ctan-candidate.zip',browse)
+        zipwrite(stage/'bntex-overleaf-starter.zip',overleaf_starter(runtime))
         report={'kind':'local-complete-distribution-candidate','files':len(runtime),
                 'contains_font_binaries':True,'publication_performed':False,
                 'release_ready':False,'reason':'Uncompleted human/platform/read-policy/release gates',

@@ -276,7 +276,23 @@ def test_complete_deterministic_local_archives(tds,tmp_path):
         assert sum(n.endswith('.tfm') for n in z.namelist())==6
     with zipfile.ZipFile(tmp_path/'a/bntex-ctan-candidate.zip') as z:
         assert 'bntex.tds.zip' in z.namelist() and 'bntex/README.md' in z.namelist()
+    with zipfile.ZipFile(tmp_path/'a/bntex-overleaf-starter.zip') as z:
+        names=z.namelist()
+        assert {'main.tex','README.md','bntex.sty','bntex-default-profile.def',
+                'licenses/OFL-1.1.txt','licenses/LICENSE'}<=set(names)
+        assert all('/' not in n for n in names if not n.startswith('licenses/'))
+        assert sum(n.endswith('.ttf') for n in names)==2
     with pytest.raises(ValueError):d.pack(tds,tmp_path/'a')
+
+
+def test_overleaf_starter_compiles_without_installation(tds,tmp_path):
+    d.pack(tds,tmp_path/'archives')
+    project=tmp_path/'project'
+    with zipfile.ZipFile(tmp_path/'archives/bntex-overleaf-starter.zip') as z:z.extractall(project)
+    empty=tmp_path/'empty-home';empty.mkdir()
+    rc,log=run(empty,project,(project/'main.tex').read_text(encoding='utf-8'));assert rc==0,log[-8000:]
+    assert 'বাংলা আমাদের মাতৃভাষা।' in text(project)
+    assert (project/'main.bnc').is_file()
 
 @pytest.mark.parametrize('name',['../bad.ttf','/bad.tfm','x/other.enc','x.json','x\\other.sty','X.TTF'])
 def test_invalid_asset_paths(name):

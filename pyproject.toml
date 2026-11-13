@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bntex-preparer"
-version = "0.1.0a2"
-description = "Experimental cached Bengali shaping and native glyphs for pdfLaTeX"
+version = "0.2.0a1"
+description = "Build and test tools for BnTeX, native Bengali shaping for pdfLaTeX"
 requires-python = ">=3.10"
 dependencies = ["fonttools>=4.40"]
 license = {text = "MIT"}
