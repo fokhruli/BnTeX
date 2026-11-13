@@ -147,7 +147,8 @@
 \cs_new:Npn\__bnc_parse_glyph:w #1,#2,#3,#4,#5,#6,#7\q_stop
  {\exp_not:N\__bnc_g:nnnnnnn{#1}{#2}{#3}{#4}{#5}{#6}{#7}}
 \cs_new_protected:Npn\__bnc_load:
- {\IfPackageLoadedT{bntex-native-memo}
+ {% \IfPackageLoadedT is newer than the LaTeX 2022-06 this package supports.
+  \cs_if_exist:cT{ver@bntex-native-memo.sty}
    {\__bn_fail:n{load~either~bntex-native-memo~or~bntex-native-reuse,~not~both}}
   \bool_if:NT\g__bnc_persist_bool
    {\bool_if:NF\g__bn_loaded_bool{\__bn_fail:n{load~a~native~profile~before~begin~document}}
