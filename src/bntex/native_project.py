@@ -243,7 +243,7 @@ def compile_once(root: Path, main: str, *, timeout: float = 60, tag: str = 'comp
     report['memo'] = dict(zip(('hits','misses','entries','glyphs','evictions'),map(int,hits[-1]))) if hits else None
     fls=root/(Path(main).stem+'.fls')
     inputs=[x[6:] for x in fls.read_text(errors='replace').splitlines() if x.startswith('INPUT ')] if fls.exists() else []
-    forbidden=[x for x in inputs if Path(x).suffix in {'.py','.json','.jsonl','.gz'} or 'bntex-cache' in x]
+    forbidden=[x for x in inputs if Path(x).suffix in {'.py','.json','.jsonl','.gz'} or ('bntex-cache' in x and Path(x).name != 'bntex-cached.sty')]
     report['recorder_forbidden_inputs']=forbidden
     report['recorder_input_count']=len(set(inputs))
     report['engine_banner']=output.splitlines()[0] if output else ''

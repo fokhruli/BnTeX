@@ -1,5 +1,7 @@
 # Native project: Overleaf handoff and unperformed browser gate
 
+> **Installed-distribution candidate:** the public `\usepackage{bntex}` now selects automatic input and the prebuilt default profile. The project-local compiler/staging commands below are maintainer/developer workflows, not ordinary author setup. The legacy cached entry is `bntex-cached` or `bntex[cached]`. See [distribution/README.md](distribution/README.md) for the current installation boundary and remaining restricted-read/Overleaf acceptance.
+
 Status: the local project, explicit new-word edits, Unicode PDF strings and document
 contexts have been exercised. **No actual Overleaf browser import/compile or
 independent second-user reproduction was performed.** The connected tool catalog

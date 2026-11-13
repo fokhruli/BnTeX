@@ -258,3 +258,18 @@ def test_latexmk_configuration_is_trusted_plain_source():
     assert 'pdflatex %O -no-shell-escape -halt-on-error %S' in code
     process=subprocess.run([need('perl'),'-c',str(path)],capture_output=True,timeout=10)
     assert process.returncode==0,process.stderr
+
+
+@pytest.mark.parametrize('name',['bntex-cache.tex','backup-bntex-cache.tex','bntex-cache-copy.tex'])
+def test_copied_vocabulary_filename_remains_forbidden(runtime,name):
+    (runtime/name).write_text('% Controlled non-executing cache-name audit probe.\n')
+    row=compile_document(runtime,r'\input{'+name+r'}\bnNative{বাংলা}')
+    assert row['returncode']==0 and row['status']=='validation-error'
+    assert any(Path(x).name==name for x in row['recorder_forbidden_inputs'])
+
+
+def test_cached_compatibility_module_is_not_word_vocabulary(runtime):
+    # Loading this implementation supplies commands, not prepared words.
+    (runtime/'bntex-cached.sty').write_bytes((ROOT/'tex/latex/bntex/bntex-cached.sty').read_bytes())
+    row=compile_document(runtime,r'\bnNative{বাংলা}',preamble=r'\usepackage{bntex-cached}')
+    assert_ok(row)

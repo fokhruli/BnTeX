@@ -1,0 +1,115 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.9in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{booktabs,array,fancyvrb}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\title{BnTeX: installed-package candidate}
+\author{BnTeX contributors}
+\date{Version 0.2.0-alpha}
+\pdfinfoomitdate=1
+\pdftrailerid{}
+\pdfsuppressptexinfo=15
+\begin{document}
+{\Large\bfseries BnTeX: installed-package candidate}\par
+Version 0.2.0-alpha\quad|\quad BnTeX contributors\par\medskip
+\textbf{Status.} Engineering candidate for a complete TeX Live installation.
+Not a CTAN submission, release approval, or Overleaf browser certification.
+
+\section{The author interface}
+Install BnTeX through the TeX distribution, then load one package:
+\begin{Verbatim}[fontsize=\small]
+\documentclass[12pt]{article}
+\usepackage{bntex}
+\begin{document}
+% Type Bengali and English here as ordinary Unicode text.
+\end{document}
+\end{Verbatim}
+The package enables Bengali detection and loads its default supported regular
+and bold profiles automatically. No language wrapper, explicit profile loader,
+Python command, font path or vocabulary preparation belongs in the document.
+Run pdfLaTeX again after changing or adding words.
+
+\section{Formatting}
+\begin{tabular}{@{}p{.29\linewidth}p{.64\linewidth}@{}}
+\toprule
+Command & Supported meaning\\\midrule
+\texttt{\string\textbf}, \texttt{\string\bfseries} & Actual audited Bold font, including its own metrics and positioning.\\
+\texttt{\string\textit}, \texttt{\string\emph} & Only with the explicit \texttt{synthetic-italic} option: a 0.18 shear, not a true italic font.\\
+\texttt{\string\underline} & Normal unbreakable LaTeX underline box.\\
+Size and color & Normal surrounding formatting; selected combinations tested.\\
+Headings and PDF strings & Automatic text in the tested heading and hyperref constructions.\\
+\bottomrule
+\end{tabular}
+
+To opt in to simulated italic appearance, load
+\texttt{\string\usepackage[synthetic-italic]\{bntex\}}.
+The accompanying \texttt{bntex-example.tex} contains real Bengali source.
+Bengali in mathematics belongs in amsmath's \texttt{\string\text\{...\}};
+this is not a Bengali math alphabet or a verbatim Unicode-font package.
+
+\section{Legacy migration}
+The older \texttt{bntex} package name selected a prepared-word cache. It no
+longer does so by default. Such documents must select
+\texttt{\string\usepackage[cached]\{bntex\}}, or explicitly load
+\texttt{bntex-cached}. The legacy preparer creates an explicitly labelled
+project-local compatibility shim without rewriting the author's source.
+An old generated shim in a document folder shadows an installed package;
+remove or migrate that old project intentionally before using the new interface.
+\newpage
+\section{What the maintainer builds}
+The complete runtime includes precompiled shaping tables, matchers, bold
+positioning data, six metric/encoding banks, and the exact Regular and Bold
+outline fonts. These are built once for the release, never per author or word.
+Font binaries are not included in the repository or source-review download.
+
+Files occupy conventional TDS directories:
+\begin{Verbatim}[fontsize=\small]
+tex/latex/bntex/
+fonts/tfm/public/bntex/
+fonts/enc/dvips/bntex/
+fonts/truetype/public/bntex/
+doc/latex/bntex/
+source/latex/bntex/
+\end{Verbatim}
+The maintainer build produces deterministic TDS and browsing-style candidate
+ZIPs. The shipped source directory includes \texttt{REPRODUCING.md}: its
+maintainer-only rebuild compiles the manual and font data, requiring identical
+runtime and archive bytes with a matching toolchain. It needs no development
+checkout. Neither build command submits files or authorizes publication.
+
+\section{Integrity and relocation}
+Font-format searches differ from ordinary TeX input searches. The loader checks
+assets in standard TeX Live roots and reuses the same verified paths for maps
+and metrics. Moving the whole TDS tree needs no rebuilt profile or baked-in
+installation path. Missing or changed checked assets stop compilation.
+
+Archive verification independently requires the complete file set, so deleting
+both a file and its manifest entry still fails. Complete license text, matching
+runtime/source modules, and both installed loaders are checked.
+MD5 detects accidental drift, not coordinated malicious replacement; the
+SHA-256 inventory is not a signature. Package-manager trust remains necessary.
+
+\textbf{Read-policy compatibility.} Normal TeX Live input policy is tested.
+Restrictive \texttt{openin\_any=p} behavior depends on the engine/Kpathsea version:
+the local pdfTeX 1.40.26 refuses symbolic-root checksums. Tests probe the primitive
+and require either checked rendering or a clear error. No policy is relaxed and
+no check is skipped. The package invokes neither a shell nor \texttt{kpsewhich}.
+Custom search trees and MiKTeX remain unvalidated. See the accompanying README
+for the upstream 2026 input-policy change and its compatibility implications.
+
+\section{Release and platform acceptance}
+Before upload, review the exact font identities and their license terms.
+Original code is MIT with retained third-party notices; fonts and derived
+resources retain SIL OFL notices. See \texttt{LICENSE},
+\texttt{THIRD-PARTY-NOTICES.md}, \texttt{OFL-1.1.txt}, and \texttt{FONT-NOTICES.md}.
+
+CTAN acceptance, TeX Live inclusion and Overleaf availability are separate.
+No public submission or platform availability is claimed. Actual Overleaf
+editing, independent installation, new-style human review, package naming and
+outstanding performance targets remain pending. See
+\href{https://ctan.org/help/upload-pkg}{CTAN upload rules} and
+\href{https://ctan.org/TDS-guidelines}{TDS guidelines}.
+\end{document}

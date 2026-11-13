@@ -1,0 +1,35 @@
+name: installed-distribution-dry-run
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  installed-package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install maintainer toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-core texlive-latex-extra texlive-fonts-recommended poppler-utils
+          python -m pip install -e '.[test]' 'fonttools==4.63.0'
+      - name: Test document-only TDS installation and explicit failure cases
+        env:
+          BNTEX_REQUIRE_INTEGRATION: '1'
+        run: |
+          kpsewhich --var-value=openin_any
+          python -m pytest -q -s tests/test_installed_distribution.py tests/test_distribution_completeness.py
+      - name: Build complete local runtime and candidate archives without uploading
+        run: |
+          python tools/build_distribution.py --out build/local-distribution
+          python -m bntex.distribution verify --root build/local-distribution/texmf > build/tds-verification.json
+          cat build/local-distribution/build-report.json
+# No artifact-upload, publishing, font redistribution or gate-completion step.
+# Default-policy support and restrictive-policy capability are tested separately.
+# A primitive probe determines whether restrictive paths are readable; the package
+# must either render with intact checks or fail explicitly, never relax the policy.

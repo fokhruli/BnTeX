@@ -181,14 +181,18 @@ def prepare(sources: list[Path], fonts: dict[str,Path], out: Path, *, package_ro
     if missing: raise ValueError(f'Unprepared styles requested by source: {sorted(missing)}')
     if not vocabulary: raise ValueError('No nonempty literal \\bn spans found.')
     if len(vocabulary)>100000: raise ValueError('Vocabulary exceeds prototype safety limit.')
-    sty = (package_root/'tex'/'latex'/'bntex'/'bntex.sty' if package_root
-           else Path(__file__).resolve().parent/'data'/'bntex.sty')
-    if not sty.is_file(): raise FileNotFoundError('Installation is incomplete: bundled bntex.sty was not found.')
+    sty = (package_root/'tex'/'latex'/'bntex'/'bntex-cached.sty' if package_root
+           else Path(__file__).resolve().parent/'data'/'bntex-cached.sty')
+    if not sty.is_file(): raise FileNotFoundError('Installation is incomplete: bundled bntex-cached.sty was not found.')
     out.parent.mkdir(parents=True,exist_ok=True)
     stage = Path(tempfile.mkdtemp(prefix='.bntex-stage-', dir=out.parent))
     try:
         (stage/'.bntex-build').write_text('Generated BnTeX build; edits may be replaced.\n')
-        shutil.copyfile(sty,stage/'bntex.sty')
+        shutil.copyfile(sty,stage/'bntex-cached.sty')
+        (stage/'bntex.sty').write_text(
+            '% Legacy prepared-project shim; installed bntex defaults to native.\n'
+            r'\ProvidesPackage{bntex}[2026/09/26 Legacy prepared project]'+'\n'
+            r'\RequirePackage{bntex-cached}'+'\n'+r'\endinput'+'\n', encoding='ascii')
         for src in sources: shutil.copyfile(src,stage/src.name)
         code = []; style_metadata={}
         # Identical font files for different aliases are permitted. Deduplicate map lines later.

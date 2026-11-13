@@ -1,5 +1,33 @@
 # Authoring update (unreleased)
 
+## Unreleased installable-distribution candidate
+
+- Require a closed release inventory independently of editable manifest entries;
+  reject omitted profiles, banks, notices, manuals and build sources.
+- Add maintainer reproduction from shipped sources with exact manual, manifest
+  and archive comparisons, without access to the development checkout.
+
+- Public `bntex` defaults to automatic input and default-profile loading.
+- Explicit `cached` option and `bntex-cached` retain legacy preparation; generated
+  cached projects receive a labelled compatibility shim without source rewriting.
+- Maintainer-only TDS/browsing archive assembly, asset inventory, checked font
+  paths reused for rendering, and document-only relocation tests.
+- Restricted input-read policy, real Overleaf, naming/rights and release approval
+  are still pending. No fonts are added to the source distribution.
+- Windows: the distribution builder and verifier compare POSIX-style relative
+  paths, so assembly no longer reports a complete tree as incomplete.
+- When no `$TEXMF...` root resolves, runtime assets are found by bare name beside
+  the document (project upload) under the same pinned MD5 check. MiKTeX does not
+  expand `$TEXMF...` roots and its input search does not reach `fonts/`, so a
+  real MiKTeX TDS installation is still unresolved.
+- Add `bntex-native-reuse`, loaded by `bntex` by default (`no-word-cache`
+  disables it): constant-time glyph-run reuse within a compilation and across
+  compilations through `\jobname.bnc`, keyed on the installation's profile
+  loader MD5 with per-line MD5 checks. On Windows/MiKTeX a 4,984-word document
+  went from 37–50 s to 2.8 s on recompilation, a 623-word one from 5.1 s to
+  0.9 s; PDF page content is identical with the cache cold, warm or disabled.
+  For automatic input, a cache hit skips the second UTF-8 decode in `\bnNative`.
+
 - Add opt-in `bntex-auto`: literal Bengali in ordinary mixed text, commands,
   headings and PDF strings without per-passage wrappers.
 - Add the exact Noto Serif Bengali Bold profile and NFSS weight selection.

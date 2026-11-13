@@ -1,5 +1,7 @@
 # Contributing to BnTeX
 
+> **Installed-distribution candidate:** the public `\usepackage{bntex}` now selects automatic input and the prebuilt default profile. The project-local compiler/staging commands below are maintainer/developer workflows, not ordinary author setup. The legacy cached entry is `bntex-cached` or `bntex[cached]`. See [docs/distribution/README.md](docs/distribution/README.md) for the current installation boundary and remaining restricted-read/Overleaf acceptance.
+
 Use a branch based on current main and a PR with an exact supported scope.
 Read AGENTS.md and the current README before historical design snapshots.
 

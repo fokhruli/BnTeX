@@ -79,3 +79,21 @@ and unresolved gates are in README.md and AUTOMATIC-AUTHORING.md. Wrapper-free
 input and standard styles are implemented with their documented limits; browser,
 new-style visual and independent-user acceptance remain separate. No public
 release is scheduled or authorized.
+
+## Installable-distribution candidate
+
+The requested public author interface is now `\usepackage{bntex}`. The
+maintainer-only `tools/build_distribution.py` assembles prebuilt data, outlines,
+licenses, a manual and sources into a complete local TDS tree and browsing ZIP.
+It never uploads them. Source-review ZIPs remain font-free and are not those
+font-containing installation archives.
+
+The old generic-font-file lookup failure is addressed for normal TeX Live roots
+under its default read policy. Strict `openin_any=p` is engine-dependent:
+the local pdfTeX 1.40.26 rejects symbolic-root checksums while the CI TeX Live
+2023 engine permits them. A separate primitive probe determines the expected
+package outcome and tests corruption rejection for readable installations.
+No policy is changed or check skipped. See docs/distribution/README.md. Browser
+and distribution-maintainer review must establish whether the target environment
+accepts this mechanism; current package readiness is not inferred from local
+TDS success. No gate in RELEASE-READINESS.json is marked passed.

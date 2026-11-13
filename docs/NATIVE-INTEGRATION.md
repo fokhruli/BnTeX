@@ -1,5 +1,7 @@
 # Native document integration: issue #7
 
+> **Installed-distribution candidate:** the public `\usepackage{bntex}` now selects automatic input and the prebuilt default profile. The project-local compiler/staging commands below are maintainer/developer workflows, not ordinary author setup. The legacy cached entry is `bntex-cached` or `bntex[cached]`. See [distribution/README.md](distribution/README.md) for the current installation boundary and remaining restricted-read/Overleaf acceptance.
+
 This guide documents the explicit-command integration path introduced by PR #14
 and #16; its measured examples retain that scope. Current ordinary authoring
 uses `bntex-auto`, without Bengali-specific wrappers. See

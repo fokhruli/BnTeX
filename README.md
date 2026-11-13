@@ -8,15 +8,53 @@ branch for the current package.
 | Interface | Editing contract |
 | --- | --- |
 | `bntex-native.sty` / `\bnNative{...}` | Install the supported font profile once. New Bengali words are shaped by pdfTeX itself; no per-document preprocessing or external shaper is invoked. |
-| `bntex.sty` / `\bn{...}` | Legacy HarfBuzz-prepared word cache. New vocabulary or styles require preparation again. |
-| `bntex-auto.sty` | Automatic connected-script routing; ordinary Bengali needs no wrappers. Real bold and opt-in synthetic slant use the audited family installation. |
+| `bntex-cached.sty` or `bntex` with `[cached]` / `\bn{...}` | Legacy HarfBuzz-prepared word cache. New vocabulary or styles require preparation again. |
+| `bntex.sty` (installed distribution) | Automatic input plus default-profile loading. No author-side generation. |
+| `bntex-auto.sty` (developer interface) | Automatic connected-script routing; ordinary Bengali needs no wrappers. Real bold and opt-in synthetic slant use the audited family installation. |
 
 The native profiles are experimental and limited to the exact static **Noto Serif
 Bengali Regular and Bold**, `bng2`/default system. It is not a generic
 OpenType engine. Font files are local dependencies and are not included in Git,
 source archives, wheels, or downloads.
 
-## Automatic authoring quick start
+## Installed-package target (distribution candidate)
+
+The public `bntex.sty` now selects automatic input and the bundled default profile:
+
+```latex
+\documentclass[12pt]{article}
+\usepackage[synthetic-italic]{bntex}
+\begin{document}
+বাংলা আমাদের মাতৃভাষা। This sentence mixes বাংলা and English.
+\textbf{মোটা বাংলা লেখা} \underline{নিচে দাগ দেওয়া লেখা}
+\end{document}
+```
+
+The complete package must first be installed by a TeX distribution. Authors do
+not run Python or load a profile explicitly. The maintainer-only distribution
+builder supplies precompiled runtime data and audited Regular/Bold assets.
+This source repository itself is not a complete font installation or a CTAN
+release. Read `docs/distribution/README.md` and the installation manual source.
+Default TeX Live root relocation is tested. Restrictive `openin_any=p` is
+engine-dependent and separately probed; actual Overleaf, independent acceptance
+and release approval remain unresolved.
+
+**Recompilation speed:** `bntex` keeps shaped words in `\jobname.bnc` (beside
+the `.aux` file), so a recompilation only shapes new words. It is optional and
+safe to delete, ignored if written by a different installation, and produces
+identical output; `[no-word-cache]` turns it off. See
+`docs/distribution/README.md`.
+
+**Migration:** `\usepackage[cached]{bntex}` or `bntex-cached` explicitly selects
+the old prepared-word backend. Old flat prepared projects keep an explicitly
+labelled local shim; an old project-local `bntex.sty` shadows the installed one.
+The native release must never silently select cached shaping.
+
+## Developer-only automatic authoring quick start
+
+The following builds a private development installation. It is **not** an
+end-user requirement for the installable distribution.
+
 
 The maintainer has activated issues #15/#25. Load `bntex-auto` and write ordinary
 Bengali mixed with English; no per-passage wrapper is required. Bold is a real
