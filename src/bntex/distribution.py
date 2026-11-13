@@ -191,7 +191,7 @@ def assemble(regular_font: Path, bold_font: Path, out: Path, *,
         for n,raw in assets.items():
             if n in (*EXTRA_MODULES,*MODULES):
                 p=tree/SOURCE_DIR/'bntex'/'data'/n;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(raw)
-        records={str(p.relative_to(tree)):sha(p.read_bytes()) for p in sorted(tree.rglob('*')) if p.is_file()}
+        records={p.relative_to(tree).as_posix():sha(p.read_bytes()) for p in sorted(tree.rglob('*')) if p.is_file()}
         if set(records) != required_files():
             raise ValueError('Incomplete or unexpected assembled distribution')
         manifest={'schema':1,'kind':'bntex-complete-local-tds','version':VERSION,
@@ -228,7 +228,7 @@ def verify(root: Path) -> dict:
     paths = list(root.rglob('*'))
     if any(p.is_symlink() for p in paths):
         raise ValueError('Symlinks are not distribution assets')
-    actual={str(p.relative_to(root)) for p in paths if p.is_file()}
+    actual={p.relative_to(root).as_posix() for p in paths if p.is_file()}
     allowed=set(m['files'])|{DOC_DIR+'/distribution-manifest.json','ls-R'}
     if actual-allowed: raise ValueError('Unlisted distribution files')
     if not 20<=len(m['files'])<=512: raise ValueError('Invalid file count')

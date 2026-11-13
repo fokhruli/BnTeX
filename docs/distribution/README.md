@@ -17,6 +17,12 @@ rendering with corruption rejection when readable, or a clear read-policy error
 when not readable. This is not unrestricted platform or Overleaf certification.
 The package never changes security settings or disables integrity checks.
 
+If no TEXMF root resolves, the resolver checks each runtime asset by bare name,
+which finds copies placed beside the document (for example a project upload),
+against the same pinned MD5. MiKTeX does not expand `$TEXMF...` roots in file
+names and its input search does not reach `fonts/`, so an installed MiKTeX TDS
+tree is not yet supported; copying the runtime files beside the document works.
+
 Original code: MIT (LICENSE), with retained THIRD-PARTY-NOTICES.md.
 Fonts and font-derived data: SIL OFL 1.1 (OFL-1.1.txt and FONT-NOTICES.md).
 No third-party font binaries are present in the source archive. The maintainer

@@ -14,6 +14,12 @@
   paths reused for rendering, and document-only relocation tests.
 - Restricted input-read policy, real Overleaf, naming/rights and release approval
   are still pending. No fonts are added to the source distribution.
+- Windows: the distribution builder and verifier compare POSIX-style relative
+  paths, so assembly no longer reports a complete tree as incomplete.
+- When no `$TEXMF...` root resolves, runtime assets are found by bare name beside
+  the document (project upload) under the same pinned MD5 check. MiKTeX does not
+  expand `$TEXMF...` roots and its input search does not reach `fonts/`, so a
+  real MiKTeX TDS installation is still unresolved.
 
 - Add opt-in `bntex-auto`: literal Bengali in ordinary mixed text, commands,
   headings and PDF strings without per-passage wrappers.
