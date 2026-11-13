@@ -5,7 +5,8 @@
 The original bootstrap roadmap is preserved byte-for-byte as
 `ROADMAP-ORIGINAL.md`. It documents the original plan, not current feature status.
 Current engineering work uses main as the integration base and topic PRs for
-changes. This is a private alpha; no public release has been authorized.
+changes. This is an alpha; publishing a release requires the maintainer's explicit
+decision.
 
 ## Implemented baseline and current authoring work
 

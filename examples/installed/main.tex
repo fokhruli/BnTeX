@@ -1,5 +1,8 @@
 \documentclass[12pt]{article}
 
+% BnTeX: write Bengali directly in pdfLaTeX. Bold uses the real Noto Serif
+% Bengali Bold face. [synthetic-italic] allows \textit/\emph as a declared
+% slant (the font family has no true italic); remove it to make italic an error.
 \usepackage[synthetic-italic]{bntex}
 
 \begin{document}
@@ -17,5 +20,10 @@ This sentence mixes বাংলা and English.
 \section{বাংলা শিরোনাম}
 
 এখানে আগে ব্যবহার করা হয়নি এমন নতুন শব্দ লেখা যাবে।
+
+\begin{itemize}
+  \item যুক্তাক্ষর: ক্ষ জ্ঞ স্বাস্থ্য প্রযুক্তি
+  \item সংখ্যা: ০ ১ ২ ৩ ৪ ৫ ৬ ৭ ৮ ৯
+\end{itemize}
 
 \end{document}

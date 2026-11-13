@@ -1,6 +1,30 @@
-# Authoring update (unreleased)
+# Changelog
 
-## Unreleased installable-distribution candidate
+## 0.2.0-alpha — first public alpha (release candidate)
+
+What document authors get:
+
+- `\usepackage{bntex}`: write Bengali directly in pdfLaTeX, mixed with English,
+  with no wrapper commands, preprocessing, shell escape or external programs.
+- Real Noto Serif Bengali Bold for `\textbf`; `[synthetic-italic]` opts in to a
+  declared slant for italic and emphasis. Headings, contents, footnotes,
+  captions, tables, underline, `ulem`, colour, sizes and hyperref strings work.
+- Three release archives: `bntex.tds.zip` for TeX Live, `bntex-overleaf-starter.zip`
+  to upload as an Overleaf project (also usable with MiKTeX), and a CTAN-style
+  candidate. They bundle the unmodified fonts under the SIL OFL 1.1.
+- A word cache (`\jobname.bnc`) makes recompiles fast: on Overleaf a 5,000-word
+  document went from 37.8 s to 2.5 s. `[no-word-cache]` disables it.
+- Known limits: only the two bundled fonts; no true italic; no hyphenation
+  inside Bengali words; installed MiKTeX trees are not supported (use the
+  project-folder files); not yet on CTAN.
+
+Release preparation: user-facing README (the developer README moved to
+`docs/DEVELOPMENT.md`), Python tools versioned 0.2.0a1, an Overleaf starter
+archive in the release build, and an Overleaf test record in `docs/reviews/`.
+
+Detailed development notes for this release follow.
+
+## Installable-distribution and authoring development notes
 
 - Require a closed release inventory independently of editable manifest entries;
   reject omitted profiles, banks, notices, manuals and build sources.
@@ -38,9 +62,7 @@
 - Record prior regular-specimen acceptance narrowly; new styles need review.
 - The maintainer has activated #15/#25; the earlier deferral is superseded.
 
-# Changelog
-
-## Unreleased — consolidated native development checkpoint
+## Consolidated native development checkpoint
 
 - Consolidate existing corpus, inventory, decoder, independent shaping model,
   native expl3 engine and document integration into main, preserving history.

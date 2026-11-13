@@ -5,8 +5,8 @@
     {
       "id": "overleaf_browser",
       "status": "pending",
-      "evidence": null,
-      "detail": "No authenticated Overleaf browser import and new-word edit has been performed. Local pdfLaTeX and CI are different evidence."
+      "evidence": "docs/reviews/2026-11-13-overleaf.json",
+      "detail": "The maintainer uploaded and compiled three documents on Overleaf (TeX Live 2026, pdfTeX 1.40.29) with and without the word cache; see the review record. A new-word edit in the browser, copy-paste and visual review of the new styles were not reported, so this gate remains pending."
     },
     {
       "id": "second_user",
@@ -23,14 +23,14 @@
     {
       "id": "interactive_performance",
       "status": "blocked",
-      "evidence": "docs/NATIVE-DISPATCH-PERFORMANCE.md",
-      "detail": "The prior 100-page distinct-token workload exceeded 90 seconds. Extended-budget completion measures throughput but does not satisfy this interactive target."
+      "evidence": "docs/reviews/2026-11-13-overleaf.json",
+      "detail": "The prior 100-page distinct-token workload exceeded 90 seconds and has not been re-measured. With the word cache, recompiling a 4,984-word document took 2.5 s on Overleaf instead of 37.8 s, but a first compile still shapes every distinct word at roughly 100-150 words per second. The maintainer decides whether this meets the interactive target."
     },
     {
       "id": "font_distribution_review",
       "status": "pending",
       "evidence": null,
-      "detail": "No font binaries are distributed. Exact supported-font dependency and any compiled-profile redistribution policy need review before public release."
+      "detail": "Release archives now include the unmodified Noto Serif Bengali Regular and Bold binaries with the complete OFL 1.1 text and FONT-NOTICES.md; the source repository does not. The maintainer must confirm this distribution before publication."
     },
     {
       "id": "package_name_review",

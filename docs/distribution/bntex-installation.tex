@@ -6,20 +6,33 @@
 \usepackage[hidelinks]{hyperref}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{5pt}
-\title{BnTeX: installed-package candidate}
+\title{BnTeX: Bengali in pdfLaTeX}
 \author{BnTeX contributors}
 \date{Version 0.2.0-alpha}
 \pdfinfoomitdate=1
 \pdftrailerid{}
 \pdfsuppressptexinfo=15
 \begin{document}
-{\Large\bfseries BnTeX: installed-package candidate}\par
+{\Large\bfseries BnTeX: Bengali in pdfLaTeX}\par
 Version 0.2.0-alpha\quad|\quad BnTeX contributors\par\medskip
-\textbf{Status.} Engineering candidate for a complete TeX Live installation.
-Not a CTAN submission, release approval, or Overleaf browser certification.
+\textbf{Status.} Alpha release. Only the bundled Noto Serif Bengali Regular and
+Bold fonts are supported. Tested with TeX Live 2023 (Linux), TeX Live 2026 on
+Overleaf, and MiKTeX 25.4 with the files beside the document.
+
+\section{Installing}
+\textbf{TeX Live.} Unzip \texttt{bntex.tds.zip} into \texttt{TEXMFHOME}
+(\texttt{kpsewhich -var-value TEXMFHOME}) or another TEXMF tree.
+
+\textbf{Overleaf, MiKTeX, or a single project.} Place the runtime files from
+\texttt{tex/latex/bntex/} and \texttt{fonts/*/*/bntex/} in the document's own
+folder. The release's \texttt{bntex-overleaf-starter.zip} is such a project:
+upload it with Overleaf's \emph{New Project, Upload Project} and keep the
+pdfLaTeX compiler. An installed MiKTeX TDS tree is not yet supported, because
+MiKTeX neither expands \texttt{\$TEXMF} roots in file names nor searches
+\texttt{fonts/} for input files.
 
 \section{The author interface}
-Install BnTeX through the TeX distribution, then load one package:
+Load one package:
 \begin{Verbatim}[fontsize=\small]
 \documentclass[12pt]{article}
 \usepackage{bntex}
@@ -31,6 +44,16 @@ The package enables Bengali detection and loads its default supported regular
 and bold profiles automatically. No language wrapper, explicit profile loader,
 Python command, font path or vocabulary preparation belongs in the document.
 Run pdfLaTeX again after changing or adding words.
+
+\textbf{Word cache.} Shaping runs in TeX macros, so a first compilation handles
+roughly 100--150 distinct words per second. BnTeX writes every shaped word to
+\texttt{\string\jobname.bnc} beside the \texttt{.aux} file and reuses it in
+later compilations, shaping only new words; on Overleaf a 5,000-word document
+recompiled in 2.5\,s instead of 38\,s. Output is identical with or without the
+cache, and deleting the file is always safe. It is ignored unless written by the
+same installation, and each line carries an MD5 so damaged lines are shaped
+again. \texttt{[no-word-cache]} disables it; \texttt{\string\BnTeXCacheStats}
+prints hits and misses.
 
 \section{Formatting}
 \begin{tabular}{@{}p{.29\linewidth}p{.64\linewidth}@{}}
@@ -97,19 +120,19 @@ Restrictive \texttt{openin\_any=p} behavior depends on the engine/Kpathsea versi
 the local pdfTeX 1.40.26 refuses symbolic-root checksums. Tests probe the primitive
 and require either checked rendering or a clear error. No policy is relaxed and
 no check is skipped. The package invokes neither a shell nor \texttt{kpsewhich}.
-Custom search trees and MiKTeX remain unvalidated. See the accompanying README
-for the upstream 2026 input-policy change and its compatibility implications.
+When no TEXMF root resolves, assets are checked by bare name, which finds copies
+beside the document under the same MD5 check. See the accompanying README for
+the upstream 2026 input-policy change and its compatibility implications.
 
-\section{Release and platform acceptance}
-Before upload, review the exact font identities and their license terms.
-Original code is MIT with retained third-party notices; fonts and derived
-resources retain SIL OFL notices. See \texttt{LICENSE},
-\texttt{THIRD-PARTY-NOTICES.md}, \texttt{OFL-1.1.txt}, and \texttt{FONT-NOTICES.md}.
+\section{Licenses and availability}
+Original code is MIT with retained third-party notices for the algorithms
+adapted from HarfBuzz; the fonts and derived resources are under the SIL Open
+Font License 1.1. See \texttt{LICENSE}, \texttt{THIRD-PARTY-NOTICES.md},
+\texttt{OFL-1.1.txt}, and \texttt{FONT-NOTICES.md}.
 
-CTAN acceptance, TeX Live inclusion and Overleaf availability are separate.
-No public submission or platform availability is claimed. Actual Overleaf
-editing, independent installation, new-style human review, package naming and
-outstanding performance targets remain pending. See
-\href{https://ctan.org/help/upload-pkg}{CTAN upload rules} and
-\href{https://ctan.org/TDS-guidelines}{TDS guidelines}.
+BnTeX is not yet on CTAN, so TeX Live's and MiKTeX's package managers cannot
+install it, and Overleaf does not provide it without the project files. CTAN
+acceptance, TeX Live inclusion and Overleaf availability are separate later
+steps. Please report rendering problems with the Bengali input, a screenshot
+and the expected result.
 \end{document}

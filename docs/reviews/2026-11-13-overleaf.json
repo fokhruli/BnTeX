@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "kind": "overleaf-browser-compile",
+  "date": "2026-11-13",
+  "reviewer": "maintainer (results reported in the development conversation)",
+  "environment": {
+    "service": "Overleaf, pdfLaTeX compiler, project upload",
+    "engine_banner": "pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) kpathsea version 6.4.2"
+  },
+  "measure": "pdfTeX \\pdfelapsedtime printed at the end of the last pdfTeX pass of an Overleaf compile",
+  "runs": [
+    {
+      "archive": "bntex-overleaf-test.zip",
+      "built_from": "a7631e3 (project-folder fallback, no word cache)",
+      "results_ms": {"main.tex": 3246, "test-600-words.tex": 4634, "test-5000-words.tex": 37772}
+    },
+    {
+      "archive": "bntex-overleaf-test-v2.zip",
+      "built_from": "d7fa0b4 (word cache)",
+      "results_ms": {
+        "main.tex": [486, 467],
+        "test-600-words.tex": [561, 502],
+        "test-5000-words.tex": [2650, 2457]
+      },
+      "note": "Two consecutive compiles each. Even the first reported value is a warm pass: Overleaf's latexmk reruns pdfTeX once a new .bnc file is in use."
+    }
+  ],
+  "statement": "All documents compiled without errors or timeouts; the engine banner and timing stamp were read from the produced PDFs.",
+  "not_reported": [
+    "visual review of the bold and slanted output",
+    "adding a new word in the browser and recompiling",
+    "copy and paste of Bengali text from the PDF viewer"
+  ],
+  "status": "compiled-and-timed"
+}

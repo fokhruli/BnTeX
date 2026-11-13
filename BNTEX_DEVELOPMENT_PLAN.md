@@ -10,7 +10,7 @@ Current entry points take precedence over the dated bootstrap snapshot:
 4. [Explicit integration](docs/NATIVE-INTEGRATION.md): optional legacy interfaces,
    source manifests, memoization and their scoped historical measurements.
 5. [Release readiness](docs/RELEASE-READINESS.md): mechanical checks and unresolved
-   evidence; no CTAN/PyPI publication or visibility change is authorized.
+   evidence; CTAN/PyPI submission and visibility changes need the maintainer's decision.
 
 Design and learning references:
 
@@ -22,5 +22,5 @@ Design and learning references:
   are historical; current results belong to the exact revision's PR/CI evidence.
 
 Issues #15 and #25 now prioritize automatic input and styles. Earlier deferrals
-do not override the maintainer's new request. The repository exists privately at
+do not override the maintainer's new request. The repository is
 `fokhruli/BnTeX`; fonts and public releases are not distributed by these guides.

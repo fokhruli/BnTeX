@@ -1,6 +1,23 @@
-# Private release-readiness work
+# Release readiness
 
-This is a review checkpoint, not a release or an upload authorization. The
+## 0.2.0-alpha status (2026-11-13)
+
+The installable `\usepackage{bntex}` package, the project-folder (Overleaf)
+layout and the word cache are on `main`. The release build produces the TDS,
+CTAN-candidate and Overleaf-starter archives, and Linux CI passes the full
+oracle-gated suite. The maintainer compiled the starter documents on Overleaf
+(TeX Live 2026) with and without the word cache; see
+[reviews/2026-11-13-overleaf.json](reviews/2026-11-13-overleaf.json).
+
+Every gate in `RELEASE-READINESS.json` is still `pending` or `blocked`: the
+new-word edit and visual review on Overleaf, a second user, the long-document
+performance target, font distribution, the package name, and the decision to
+publish. Each gate's status is the maintainer's call; this document does not
+change any of them.
+
+## Earlier checkpoint notes
+
+This was a review checkpoint, not a release or an upload authorization. The
 original cached backend and the experimental fixed-profile native path coexist.
 The automatic `bntex-auto` interface and audited regular/bold family are described
 in [AUTOMATIC-AUTHORING.md](AUTOMATIC-AUTHORING.md). The earlier automatic-input
