@@ -67,7 +67,8 @@ def run(tree,folder,body=None,*,read_policy=None):
 
 
 def text(folder):
-    return subprocess.check_output([shutil.which('pdftotext'),str(folder/'main.pdf'),'-']).decode('utf8')
+    # Explicit UTF-8: some pdftotext builds (e.g. on Windows) default to Latin-1.
+    return subprocess.check_output([shutil.which('pdftotext'),'-enc','UTF-8',str(folder/'main.pdf'),'-']).decode('utf8')
 
 
 def test_document_only_folder_and_unseen_edit(tds,tmp_path):
@@ -119,6 +120,28 @@ def test_verified_full_paths_do_not_load_local_font_shadow(tds,tmp_path):
         (folder/name).write_bytes(b'not a valid font asset')
     rc,log=run(tds,folder);assert rc==0,log[-8000:]
     assert 'বাংলা আমাদের মাতৃভাষা।' in text(folder)
+
+
+def flat_runtime(tree,folder):
+    """Copy only runtime assets beside the document, as in a project upload."""
+    folder.mkdir(parents=True)
+    for dirname in (d.TEX_DIR,*d.FONT_DIRS.values()):
+        for p in (tree/dirname).iterdir():
+            if p.is_file():shutil.copyfile(p,folder/p.name)
+
+
+def test_project_folder_copy_without_tds_root(tds,tmp_path):
+    empty=tmp_path/'empty-home';empty.mkdir()
+    folder=tmp_path/'project';flat_runtime(tds,folder)
+    rc,log=run(empty,folder);assert rc==0,log[-8000:]
+    assert 'বাংলা আমাদের মাতৃভাষা।' in text(folder)
+    # The fallback keeps the pinned checksum: a changed local copy must fail.
+    damaged=tmp_path/'damaged-project';flat_runtime(tds,damaged)
+    name='bnf'+PINNED_BOLD_SHA256[:16]+'.ttf'
+    (damaged/name).write_bytes((damaged/name).read_bytes()+b'corrupt')
+    rc,log=run(empty,damaged);assert rc!=0
+    assert 'installed asset changed: '+name in diagnostic_text(log),log[-8000:]
+    assert not (damaged/'main.pdf').exists()
 
 
 def checksum_probe(tree, folder, *, read_policy):

@@ -13,6 +13,7 @@ dist/
 *.pl
 *.map
 *.aux
+*.bnc
 *.log
 *.out
 *.toc

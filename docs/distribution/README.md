@@ -17,6 +17,27 @@ rendering with corruption rejection when readable, or a clear read-policy error
 when not readable. This is not unrestricted platform or Overleaf certification.
 The package never changes security settings or disables integrity checks.
 
+If no TEXMF root resolves, the resolver checks each runtime asset by bare name,
+which finds copies placed beside the document (for example a project upload),
+against the same pinned MD5. MiKTeX does not expand `$TEXMF...` roots in file
+names and its input search does not reach `fonts/`, so an installed MiKTeX TDS
+tree is not yet supported; copying the runtime files beside the document works.
+
+## Word cache (`\jobname.bnc`)
+
+`bntex` loads `bntex-native-reuse`, which shapes each distinct word once per
+compilation and writes the positioned glyph runs to `\jobname.bnc` next to the
+`.aux` file. The next compilation reuses them, so only new or changed words are
+shaped again. The file is an accelerator, not a word list: deleting it only makes
+the next compilation slower. It is ignored unless it was written by the same
+installation (keyed on the MD5 of the profile loader, which pins every module and
+font), and every line carries an MD5 so a truncated or damaged line is shaped
+again instead of used. Output is identical with or without the cache. Use
+`\usepackage[no-word-cache]{bntex}` to disable it, `\BnTeXCacheNoFile` in the
+preamble to keep it in memory only, and `\BnTeXCacheStats` to print hit counts.
+At most 15,000 distinct word forms are cached per document; further words are
+shaped normally.
+
 Original code: MIT (LICENSE), with retained THIRD-PARTY-NOTICES.md.
 Fonts and font-derived data: SIL OFL 1.1 (OFL-1.1.txt and FONT-NOTICES.md).
 No third-party font binaries are present in the source archive. The maintainer

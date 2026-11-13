@@ -6,8 +6,9 @@
 \tl_new:N\l__bnd_path_tl
 \tl_new:N\l__bnd_hash_tl
 \bool_new:N\l__bnd_found_bool
-% These are symbolic Kpathsea roots, not baked-in developer paths. All map and
-% metric references use the SAME verified path, never a second basename lookup.
+% These are symbolic Kpathsea roots, not baked-in developer paths. When a root
+% resolves, all map and metric references use that SAME verified path. Only the
+% project-folder fallback below uses bare names, checked against the same MD5.
 \clist_const:Nn\c__bnd_roots_clist
  {TEXMFCONFIG,TEXMFVAR,TEXMFHOME,TEXMFLOCAL,TEXMFSYSCONFIG,TEXMFSYSVAR,TEXMFDIST}
 \cs_new_protected:Npn\__bnd_probe:nnn #1#2#3
@@ -21,6 +22,16 @@
 \NewDocumentCommand\BnTeXInstalledAsset{mmm}
  {\bool_set_false:N\l__bnd_found_bool
   \clist_map_inline:Nn\c__bnd_roots_clist{\__bnd_probe:nnn{##1}{#2}{#3}}
+  % Project-folder fallback (e.g. an Overleaf upload, or engines such as MiKTeX
+  % that do not expand $TEXMF roots): checksum the bare name with the same pinned
+  % MD5. The ordinary input search does not reach fonts/ trees, so this does not
+  % make a real MiKTeX TDS installation resolvable; it never relaxes the check.
+  \bool_if:NF\l__bnd_found_bool
+   {\tl_set:Nn\l__bnd_path_tl{#1}
+    \tl_set:Nx\l__bnd_hash_tl{\pdfmdfivesum file{\l__bnd_path_tl}}
+    \tl_if_empty:NF\l__bnd_hash_tl
+     {\str_if_eq:VnF\l__bnd_hash_tl{#3}{\__bn_fail:n{installed~asset~changed:~#1}}
+      \bool_set_true:N\l__bnd_found_bool}}
   \bool_if:NF\l__bnd_found_bool
    {\__bn_fail:n{installed~asset~unreadable:~#1;~missing~TDS~files~or~read-policy~restriction}}
   \cs_gset:cpx{__bnd_path_#1}{\exp_not:V\l__bnd_path_tl}}
