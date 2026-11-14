@@ -296,6 +296,85 @@ def emit_matchers(p: dict) -> bytes:
     return ('\n'.join(lines)+'\n').encode('ascii')
 
 
+ZWSP = chr(0x200B)
+
+
+def _usable(cp: int) -> bool:
+    """Controls, surrogates and private-use code points never become copied text."""
+    return cp >= 0x20 and not 0x7F <= cp <= 0x9F and not 0xD800 <= cp <= 0xF8FF
+
+
+def glyph_text(p: dict, names: list[str] | None = None) -> dict[int, str]:
+    """Map each reachable glyph to the Unicode text it stands for.
+
+    The pinned font names its glyphs by Adobe Glyph List rules (uni09CD09AF is
+    HASANT+YA, uni09BF09B009CD is I-KAR with a merged reph), so names decide
+    first. Several GSUB lookups only serve drawing (swapping a consumed glyph for
+    the empty uni200B, or borrowing a glyph inside a context), so following them
+    would attach the wrong text; they only fill glyphs whose names say nothing.
+    Two kinds of glyph stand for nothing and become an invisible U+200B: the
+    space glyph, which BnTeX only draws (zero-width) for a hidden ZWJ/ZWNJ since
+    real spaces are TeX glue, and suffixed stacking helpers named after Vedic
+    signs (uni1CF5.stack). Pre-base matras map to themselves, so viewers that
+    read glyphs in drawing order see them before their consonant; the per-word
+    /ActualText keeps logical order for viewers that honour it.
+    """
+    text: dict[int, str] = {}
+    if names is not None:
+        from fontTools.agl import toUnicode
+        for glyph, name in enumerate(names):
+            value = toUnicode(name)
+            if not value or not all(_usable(ord(c)) for c in value):
+                continue
+            helper = name == 'space' or ('.' in name and any(0x1CD0 <= ord(c) <= 0x1CFF for c in value))
+            text[glyph] = ZWSP if helper else value
+    for cp, glyph in sorted(p['cmap']):
+        if _usable(cp):
+            text.setdefault(glyph, chr(cp))
+    changed = True
+    while changed:
+        changed = False
+        for lookup in p['gsub']:
+            for subtable in lookup['subtables']:
+                kind = subtable['kind']
+                if kind == 'single':
+                    pairs = [(a, b) for a, b in subtable['entries']]
+                elif kind == 'multiple':
+                    pairs = [(a, seq[0]) for a, seq in subtable['entries'] if len(seq) == 1]
+                elif kind == 'ligature':
+                    for glyphs, lig in subtable['entries']:
+                        if lig not in text and all(g in text for g in glyphs):
+                            text[lig] = ''.join(text[g] for g in glyphs); changed = True
+                    continue
+                else:
+                    continue
+                for a, b in pairs:
+                    if b not in text and a in text:
+                        text[b] = text[a]; changed = True
+    return text
+
+
+def emit_tounicode(p: dict, names: list[str]) -> bytes:
+    """pdfTeX glyph-name table so PDF viewers can copy and search Bengali.
+
+    Bank encodings name glyphs /index<gid>, so pdfTeX's ToUnicode CMaps are empty
+    without this table. Regular and Bold share glyph order and substitutions (the
+    authoring exporter proves it), so one global table serves both faces.
+    """
+    lines = ['% Glyph-to-Unicode names for PDF text extraction; no document vocabulary.',
+             '% pdfTeX writes these into each bank font\'s /ToUnicode CMap.',
+             r'\ifnum\pdfgentounicode=0 \pdfgentounicode=1 \fi']
+    if len(names) != p['glyph_count']:
+        raise ValueError('Glyph names do not match the profile')
+    for glyph, value in sorted(glyph_text(p, names).items()):
+        if any(ord(c) > 0xFFFF for c in value):
+            continue
+        codes = ' '.join(f'{ord(c):04X}' for c in value)
+        lines.append(rf'\pdfglyphtounicode{{index{glyph}}}{{{codes}}}')
+    lines.append(r'\endinput')
+    return ('\n'.join(lines)+'\n').encode('ascii')
+
+
 def export(profile_path:Path,font_path:Path,out:Path)->dict:
     if profile_path.stat().st_size>8*1024*1024:raise ValueError('Profile too large')
     raw=profile_path.read_bytes()
@@ -320,6 +399,9 @@ def export(profile_path:Path,font_path:Path,out:Path)->dict:
         for name,body in resources.items():(stage/name).write_bytes(body)
         (stage/'bntex-native-tables.def').write_bytes(tables)
         (stage/'bntex-native-matchers.def').write_bytes(matchers)
+        from fontTools.ttLib import TTFont
+        with TTFont(font_path) as font:
+            (stage/'bntex-native-tounicode.def').write_bytes(emit_tounicode(p,font.getGlyphOrder()))
         checks=[]
         for path in sorted(stage.iterdir()):
             if path.suffix=='.pl':path.unlink();continue
@@ -327,7 +409,8 @@ def export(profile_path:Path,font_path:Path,out:Path)->dict:
         prefix='bnf'+FONT_SHA[:16]
         loader=['% Trusted installation manifest; MD5 detects accidental drift, not authentication.',*checks,*maplines,
                 r'\ExplSyntaxOn',r'\cs_gset:Npn \__bn_font_prefix: {'+prefix+'}',r'\ExplSyntaxOff',
-                r'\input{bntex-native-tables.def}',r'\input{bntex-native-matchers.def}',r'\BnTeXNativeProfileReady{1}{'+FONT_SHA+'}{'+PROFILE_SHA+'}',r'\endinput']
+                r'\input{bntex-native-tables.def}',r'\input{bntex-native-matchers.def}',r'\input{bntex-native-tounicode.def}',
+                r'\BnTeXNativeProfileReady{1}{'+FONT_SHA+'}{'+PROFILE_SHA+'}',r'\endinput']
         (stage/'bntex-native-profile.tex').write_text('\n'.join(loader)+'\n',encoding='ascii',newline='\n')
         manifest={'abi':ABI,'font_sha256':FONT_SHA,'profile_sha256':PROFILE_SHA,'tables_sha256':hashlib.sha256(tables).hexdigest(),
           'table_bytes':len(tables),'matchers_sha256':hashlib.sha256(matchers).hexdigest(),'matcher_bytes':len(matchers),'glyph_count':p['glyph_count'],'vocabulary':None,'files':{f.name:hashlib.sha256(f.read_bytes()).hexdigest() for f in sorted(stage.iterdir())}}

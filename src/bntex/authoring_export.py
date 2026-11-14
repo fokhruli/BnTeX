@@ -53,6 +53,12 @@ def export_authoring(regular_font: Path, bold_font: Path, out: Path) -> dict:
     if bold.font_sha256 != PINNED_BOLD_SHA256 or hashlib.sha256(serialize(bold)).hexdigest() != BOLD_PROFILE_SHA:
         raise ValueError('Wrong bold font/profile')
     delta, count = style_delta(asdict(regular), asdict(bold))
+    # The glyph-to-Unicode table names glyphs by index, so both faces must also
+    # agree on what each index is called.
+    from fontTools.ttLib import TTFont
+    with TTFont(regular_font) as r, TTFont(bold_font) as b:
+        if r.getGlyphOrder() != b.getGlyphOrder():
+            raise ValueError('The audited faces no longer share glyph names')
     from .build import inspect_font, _write_banks
     out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.bntex-authoring-', dir=out.parent) as temp:

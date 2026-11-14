@@ -33,7 +33,7 @@ FONT_DIRS = {'.ttf':'fonts/truetype/public/bntex',
 EXTRA_MODULES = ('bntex.sty', 'bntex-cached.sty', 'bntex-distribution.sty')
 GENERATED_MODULES = ('bntex-default-profile.def', 'bntex-native-profile.tex',
                      'bntex-native-tables.def', 'bntex-native-matchers.def',
-                     'bntex-native-bold.def')
+                     'bntex-native-tounicode.def', 'bntex-native-bold.def')
 SOURCE_MODULES = ('__init__.py', '__main__.py', 'authoring_export.py', 'build.py',
                   'corpus.py', 'distribution.py', 'harfbuzz.py', 'inventory.py',
                   'mining.py', 'native.py', 'native_layout.py', 'native_model.py',
