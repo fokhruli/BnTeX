@@ -1,4 +1,4 @@
-# BnTeX 0.2.0-alpha — Bengali in pdfLaTeX
+# BnTeX 0.2.1-alpha — Bengali in pdfLaTeX
 
 Write `\usepackage{bntex}` and type ordinary Bengali and English text in a
 pdfLaTeX document. Bold uses the real Noto Serif Bengali Bold face.
@@ -9,6 +9,9 @@ network access or shell escape. See `bntex-manual.pdf` and `bntex-example.tex`.
 
 This is an alpha release. It supports only the bundled Noto Serif Bengali
 Regular and Bold fonts.
+
+Home page and source: <https://github.com/fokhruli/BnTeX>. Please report
+problems at <https://github.com/fokhruli/BnTeX/issues>.
 
 ## Installing
 

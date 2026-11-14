@@ -23,7 +23,7 @@ from .native_project import installation_manifest, read_json
 from .tex_export import FONT_SHA, PROFILE_SHA, MODULES
 from .native_profile import PINNED_BOLD_SHA256
 
-VERSION = '0.2.0-alpha'
+VERSION = '0.2.1-alpha'
 OFL_SHA256 = 'f71d138f6a823c98a093ca5eb559464edc2085701b5a8694e585dac71002befd'
 TEX_DIR = 'tex/latex/bntex'
 DOC_DIR = 'doc/latex/bntex'
