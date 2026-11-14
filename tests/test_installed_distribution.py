@@ -282,6 +282,15 @@ def test_complete_deterministic_local_archives(tds,tmp_path):
                 'licenses/OFL-1.1.txt','licenses/LICENSE'}<=set(names)
         assert all('/' not in n for n in names if not n.startswith('licenses/'))
         assert sum(n.endswith('.ttf') for n in names)==2
+    # Archives must be identical whichever OS builds them: Unix entry flags and
+    # LF-only text, as CTAN and TeX Live expect.
+    binary=('.ttf','.tfm','.pdf','.zip')
+    for archive in a['archives']:
+        with zipfile.ZipFile(tmp_path/'a'/archive) as z:
+            for info in z.infolist():
+                assert info.create_system==3 and info.external_attr>>16==0o100644, info.filename
+                if not info.filename.endswith(binary):
+                    assert b'\r' not in z.read(info), info.filename
     with pytest.raises(ValueError):d.pack(tds,tmp_path/'a')
 
 

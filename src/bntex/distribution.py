@@ -203,7 +203,7 @@ def assemble(regular_font: Path, bold_font: Path, out: Path, *,
                   'read_policy':'TeX Live default input policy; restrictive openin_any=p is engine-dependent and separately probed',
                   'browser_test':'not-performed','publication_authorized':False,'files':records}
         mp=tree/DOC_DIR/'distribution-manifest.json'
-        mp.write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')
+        mp.write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n',newline='\n')
         tree.rename(out)
     return manifest
 
@@ -314,6 +314,7 @@ def pack(root: Path, out: Path) -> dict:
             for name,raw in sorted(items.items()):
                 info=zipfile.ZipInfo(name,(2026,1,1,0,0,0))
                 info.compress_type=zipfile.ZIP_DEFLATED;info.external_attr=0o100644<<16
+                info.create_system=3  # Unix, so unzip honours the mode bits on every platform
                 z.writestr(info,raw)
     with tempfile.TemporaryDirectory(prefix='.bntex-pack-',dir=out.parent) as temp:
         stage=Path(temp)/'archives';stage.mkdir()
@@ -334,7 +335,7 @@ def pack(root: Path, out: Path) -> dict:
                 'contains_font_binaries':True,'publication_performed':False,
                 'release_ready':False,'reason':'Uncompleted human/platform/read-policy/release gates',
                 'archives':{p.name:sha(p.read_bytes()) for p in sorted(stage.glob('*.zip'))}}
-        (stage/'build-report.json').write_text(json.dumps(report,sort_keys=True,indent=2)+'\n')
+        (stage/'build-report.json').write_text(json.dumps(report,sort_keys=True,indent=2)+'\n',newline='\n')
         stage.rename(out)
     return report
 
@@ -385,7 +386,7 @@ def rebuild(root: Path, out: Path) -> dict:
             raise ValueError('Rebuilt distribution differs from the recorded manifest')
         report=pack(stage/'texmf', stage/'archives')
         report.update(runtime_files=len(reproduced['files']), source_rebuild='exact-match')
-        (stage/'build-report.json').write_text(json.dumps(report,sort_keys=True,indent=2)+'\n')
+        (stage/'build-report.json').write_text(json.dumps(report,sort_keys=True,indent=2)+'\n',newline='\n')
         # Verify the original before committing the new output tree.
         if verify(root) != original:
             raise ValueError('Input distribution changed during rebuild')

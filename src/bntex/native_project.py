@@ -129,7 +129,7 @@ def stage(manifest: Path, installation: Path, out: Path) -> dict:
             shutil.copyfile(installation/name, result/name)
         for name, raw in source.items():
             p = result/name; p.parent.mkdir(parents=True, exist_ok=True); p.write_bytes(raw)
-        (result/'bntex-project.json').write_text(json.dumps(meta,sort_keys=True,indent=2)+'\n')
+        (result/'bntex-project.json').write_text(json.dumps(meta,sort_keys=True,indent=2)+'\n',newline='\n')
         result.rename(out)
     return meta
 
@@ -167,7 +167,8 @@ def pack(root: Path, out: Path) -> dict:
         with zipfile.ZipFile(out,'x',compression=zipfile.ZIP_DEFLATED) as z:
             for name in names:
                 info=zipfile.ZipInfo(name,(2026,1,1,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED
-                info.external_attr=0o100644<<16; z.writestr(info,local_file(root,name).read_bytes())
+                info.external_attr=0o100644<<16; info.create_system=3
+                z.writestr(info,local_file(root,name).read_bytes())
     except BaseException:
         out.unlink(missing_ok=True); raise
     return {'zip':str(out),'files':len(names),'sha256':digest(out.read_bytes()),

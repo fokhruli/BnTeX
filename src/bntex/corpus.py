@@ -345,7 +345,7 @@ def prepare_review(corpus_path: Path, oracle_path: Path, font: Path, out: Path) 
     check(corpus_path, oracle_path, font)
     with tempfile.TemporaryDirectory(prefix='bntex-review-source-') as directory:
         source = Path(directory) / 'review.tex'
-        source.write_text(review_tex(corpus_path, oracle_path), encoding='utf-8')
+        source.write_text(review_tex(corpus_path, oracle_path), encoding='utf-8',newline='\n')
         manifest = prepare([source], {'regular': font}, out)
     return {'output': str(out), 'reference_check': 'exact-match',
             'prepared_words': manifest['styles']['regular']['word_count'],

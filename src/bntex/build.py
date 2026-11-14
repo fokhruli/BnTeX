@@ -74,7 +74,7 @@ def _write_banks(stage: Path, path: Path, meta: dict, glyph_ids: set[int]) -> tu
             selected = {gid % 256: gid for gid in glyph_ids if gid // 256 == bank}
             entries = [f'/index{selected[i]}' if i in selected else '/.notdef' for i in range(256)]
             enc = '/' + basename + 'Encoding [\n' + '\n'.join(' '.join(entries[i:i+8]) for i in range(0,256,8)) + '\n] def\n'
-            (stage / (basename + '.enc')).write_text(enc, encoding='ascii')
+            (stage / (basename + '.enc')).write_text(enc, encoding='ascii',newline='\n')
             pl = ['(FAMILY BNTEX)', '(CODINGSCHEME BNTEX-GLYPH-BANK)', '(DESIGNSIZE R 10.0)',
                   '(FONTDIMEN (SLANT R 0.0) (SPACE R 0.25) (STRETCH R 0.12) '
                   '(SHRINK R 0.08) (XHEIGHT R 0.5) (QUAD R 1.0))']
@@ -84,7 +84,7 @@ def _write_banks(stage: Path, path: Path, meta: dict, glyph_ids: set[int]) -> tu
                 pl.append(f'(CHARACTER D {slot} (CHARWD R {_num(advance)}) '
                           '(CHARHT R 0.0) (CHARDP R 0.0))')
                 mapping[gid] = basename
-            plpath = stage / (basename + '.pl'); plpath.write_text('\n'.join(pl)+'\n', encoding='ascii')
+            plpath = stage / (basename + '.pl'); plpath.write_text('\n'.join(pl)+'\n', encoding='ascii',newline='\n')
             proc = subprocess.run(['pltotf', plpath.name, basename+'.tfm'], cwd=stage,
                                   text=True, capture_output=True, timeout=30, check=False)
             if proc.returncode != 0:
@@ -187,12 +187,12 @@ def prepare(sources: list[Path], fonts: dict[str,Path], out: Path, *, package_ro
     out.parent.mkdir(parents=True,exist_ok=True)
     stage = Path(tempfile.mkdtemp(prefix='.bntex-stage-', dir=out.parent))
     try:
-        (stage/'.bntex-build').write_text('Generated BnTeX build; edits may be replaced.\n')
+        (stage/'.bntex-build').write_text('Generated BnTeX build; edits may be replaced.\n',newline='\n')
         shutil.copyfile(sty,stage/'bntex-cached.sty')
         (stage/'bntex.sty').write_text(
             '% Legacy prepared-project shim; installed bntex defaults to native.\n'
             r'\ProvidesPackage{bntex}[2026/09/26 Legacy prepared project]'+'\n'
-            r'\RequirePackage{bntex-cached}'+'\n'+r'\endinput'+'\n', encoding='ascii')
+            r'\RequirePackage{bntex-cached}'+'\n'+r'\endinput'+'\n', encoding='ascii',newline='\n')
         for src in sources: shutil.copyfile(src,stage/src.name)
         code = []; style_metadata={}
         # Identical font files for different aliases are permitted. Deduplicate map lines later.
@@ -211,14 +211,14 @@ def prepare(sources: list[Path], fonts: dict[str,Path], out: Path, *, package_ro
                 seen.add(line)
             deduped.append(line)
         (stage/'bntex-cache.tex').write_text('% Generated BnTeX cache. Schema 1. No shell commands.\n'+
-                                           '\n'.join(checks+deduped)+'\n',encoding='ascii')
+                                           '\n'.join(checks+deduped)+'\n',encoding='ascii',newline='\n')
         manifest={'schema':SCHEMA,'bntex_version':__version__,'fonttools_version':fonttools_version,
                   'normalization':'raw UTF-8 lookup; HarfBuzz internal shaping normalization',
                   'direction':'ltr','script':'Beng','language':'bn','features':'HarfBuzz defaults',
                   'sources':source_records,'styles':style_metadata,'files':{}}
         for p in sorted(stage.iterdir()):
             if p.is_file(): manifest['files'][p.name]=digest(p.read_bytes())
-        (stage/'bntex-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+        (stage/'bntex-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf8',newline='\n')
         # Do not delete any existing build until the new one is complete.
         backup=None
         if out.exists():
