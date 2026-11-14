@@ -7,10 +7,12 @@
   instead of font codes. A new generated module, `bntex-native-tounicode.def`,
   gives each glyph its Unicode text. In those viewers, vowel signs drawn to the
   left of a consonant and reph still come out on the side where they are drawn.
-  Viewers that read `/ActualText` keep the exact text.
-- Installed MiKTeX packages: MiKTeX's pdfTeX cannot checksum files under
+  Viewers that read `/ActualText` keep the exact text. Checked with PDF.js 4.10.
+- Installed MiKTeX packages now work: unzip `bntex.tds.zip` into a folder
+  registered as a MiKTeX root. MiKTeX's pdfTeX cannot checksum files under
   `fonts/`, so on MiKTeX only, BnTeX finds them through MiKTeX's font search and
-  checks every metric file against the checked shaping tables instead.
+  checks every metric file against the checked shaping tables instead. Tested
+  with MiKTeX 25.4 in a registered root.
 - CTAN archive: no file is stored twice. `bntex-native-profile.tex` now inputs
   `bntex-default-profile.def`, and the browsing tree omits `source/bntex/data/`,
   which repeats `tex/`; the TDS archive inside it keeps everything.

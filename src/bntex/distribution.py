@@ -299,6 +299,10 @@ The first compile shapes every distinct word (about 100 words per second);
 later compiles reuse the shaped words stored in main.bnc and only shape new
 ones. Deleting main.bnc is always safe.
 
+Copying text from Overleaf's PDF preview gives the right Bengali letters, but
+vowel signs drawn before their consonant, and reph, come out in drawing order.
+For exact text, download the PDF and open it in a desktop viewer.
+
 The same files work locally beside any document (TeX Live or MiKTeX).
 Fonts: Noto Serif Bengali Regular and Bold, SIL Open Font License 1.1; code:
 MIT. See licenses/.
