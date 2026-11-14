@@ -40,7 +40,7 @@ def main():
             code_license=ROOT/'LICENSE',third_party_notices=ROOT/'THIRD-PARTY-NOTICES.md')
         report=pack(stage/'texmf',stage/'archives')
         report['runtime_files']=len(result['files'])
-        (stage/'build-report.json').write_text(json.dumps(report,sort_keys=True,indent=2)+'\n')
+        (stage/'build-report.json').write_text(json.dumps(report,sort_keys=True,indent=2)+'\n',newline='\n')
         stage.rename(a.out)
     print(json.dumps(report,sort_keys=True,indent=2))
 

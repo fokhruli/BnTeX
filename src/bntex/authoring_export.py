@@ -74,13 +74,13 @@ def export_authoring(regular_font: Path, bold_font: Path, out: Path) -> dict:
                 insertion.append(r'\BnTeXNativeCheckFile{'+p.name+'}{'+hashlib.md5(p.read_bytes()).hexdigest().upper()+'}')
         insertion += maps + [r'\input{bntex-native-bold.def}']
         loader = loader.replace(r'\endinput', '\n'.join(insertion)+'\n'+r'\endinput')
-        loader_path.write_text(loader, encoding='ascii')
+        loader_path.write_text(loader, encoding='ascii',newline='\n')
         manifest.update(bold_font_sha256=PINNED_BOLD_SHA256, bold_profile_sha256=BOLD_PROFILE_SHA,
                         bold_delta_entries=count, bold_delta_bytes=len(delta), authoring_abi=1,
                         italic_policy='strict by default; explicit synthetic-italic option', vocabulary=None)
         manifest['files'] = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                              for p in sorted(stage.iterdir()) if p != manifest_path}
-        manifest_path.write_text(json.dumps(manifest, sort_keys=True, indent=2)+'\n')
+        manifest_path.write_text(json.dumps(manifest, sort_keys=True, indent=2)+'\n',newline='\n')
         stage.rename(out)
     return manifest
 

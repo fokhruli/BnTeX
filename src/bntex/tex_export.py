@@ -328,10 +328,10 @@ def export(profile_path:Path,font_path:Path,out:Path)->dict:
         loader=['% Trusted installation manifest; MD5 detects accidental drift, not authentication.',*checks,*maplines,
                 r'\ExplSyntaxOn',r'\cs_gset:Npn \__bn_font_prefix: {'+prefix+'}',r'\ExplSyntaxOff',
                 r'\input{bntex-native-tables.def}',r'\input{bntex-native-matchers.def}',r'\BnTeXNativeProfileReady{1}{'+FONT_SHA+'}{'+PROFILE_SHA+'}',r'\endinput']
-        (stage/'bntex-native-profile.tex').write_text('\n'.join(loader)+'\n',encoding='ascii')
+        (stage/'bntex-native-profile.tex').write_text('\n'.join(loader)+'\n',encoding='ascii',newline='\n')
         manifest={'abi':ABI,'font_sha256':FONT_SHA,'profile_sha256':PROFILE_SHA,'tables_sha256':hashlib.sha256(tables).hexdigest(),
           'table_bytes':len(tables),'matchers_sha256':hashlib.sha256(matchers).hexdigest(),'matcher_bytes':len(matchers),'glyph_count':p['glyph_count'],'vocabulary':None,'files':{f.name:hashlib.sha256(f.read_bytes()).hexdigest() for f in sorted(stage.iterdir())}}
-        (stage/'native-installation.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')
+        (stage/'native-installation.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n',newline='\n')
         stage.rename(out)
     return manifest
 
