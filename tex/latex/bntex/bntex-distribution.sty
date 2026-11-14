@@ -1,4 +1,4 @@
-%% Checked font-format paths for a complete TeX Live TDS installation. MIT.
+%% Checked font-format paths for a complete TeX Live or MiKTeX installation. MIT.
 %% Never invokes kpsewhich, changes security settings, or executes a shell.
 \NeedsTeXFormat{LaTeX2e}[2022-06-01]
 \RequirePackage{bntex-native}
@@ -6,11 +6,23 @@
 \tl_new:N\l__bnd_path_tl
 \tl_new:N\l__bnd_hash_tl
 \bool_new:N\l__bnd_found_bool
+\int_new:N\l__bnd_bank_int
+\int_new:N\l__bnd_gid_int
+\seq_new:N\g__bnd_metric_seq
 % These are symbolic Kpathsea roots, not baked-in developer paths. When a root
 % resolves, all map and metric references use that SAME verified path. Only the
 % project-folder fallback below uses bare names, checked against the same MD5.
 \clist_const:Nn\c__bnd_roots_clist
  {TEXMFCONFIG,TEXMFVAR,TEXMFHOME,TEXMFLOCAL,TEXMFSYSCONFIG,TEXMFSYSVAR,TEXMFDIST}
+% MiKTeX's pdfTeX checksums only files on its TeX input path and does not expand
+% $TEXMF roots, so the fonts/ files of an installed MiKTeX package cannot be
+% read with \pdfmdfivesum. Only there, such files are found through MiKTeX's
+% own font search instead (see \BnTeXInstalledAsset). A test may preset this.
+\bool_if_exist:NF\g__bnd_font_search_bool
+ {\bool_new:N\g__bnd_font_search_bool
+  \tl_set:Nx\l_tmpa_tl{\pdftexbanner}
+  \tl_set:Nx\l_tmpb_tl{\tl_to_str:n{MiKTeX}}
+  \exp_args:NNV\tl_if_in:NnT\l_tmpa_tl\l_tmpb_tl{\bool_gset_true:N\g__bnd_font_search_bool}}
 \cs_new_protected:Npn\__bnd_probe:nnn #1#2#3
  {\bool_if:NF\l__bnd_found_bool
    {\tl_set:Nx\l__bnd_path_tl{\c_dollar_str #1/#2}
@@ -22,15 +34,22 @@
 \NewDocumentCommand\BnTeXInstalledAsset{mmm}
  {\bool_set_false:N\l__bnd_found_bool
   \clist_map_inline:Nn\c__bnd_roots_clist{\__bnd_probe:nnn{##1}{#2}{#3}}
-  % Project-folder fallback (e.g. an Overleaf upload, or engines such as MiKTeX
-  % that do not expand $TEXMF roots): checksum the bare name with the same pinned
-  % MD5. The ordinary input search does not reach fonts/ trees, so this does not
-  % make a real MiKTeX TDS installation resolvable; it never relaxes the check.
+  % Project-folder fallback (e.g. an Overleaf upload, or a MiKTeX document
+  % folder): checksum the bare name with the same pinned MD5.
   \bool_if:NF\l__bnd_found_bool
    {\tl_set:Nn\l__bnd_path_tl{#1}
     \tl_set:Nx\l__bnd_hash_tl{\pdfmdfivesum file{\l__bnd_path_tl}}
     \tl_if_empty:NF\l__bnd_hash_tl
      {\str_if_eq:VnF\l__bnd_hash_tl{#3}{\__bn_fail:n{installed~asset~changed:~#1}}
+      \bool_set_true:N\l__bnd_found_bool}}
+  % Installed MiKTeX package: TeX cannot read the file, so use the bare name
+  % for MiKTeX's font search. Metric files are compared with the checked shaping
+  % tables afterwards (\BnTeXInstalledMetrics); outlines and encodings rely on
+  % the package manager's own integrity checks.
+  \bool_if:NF\l__bnd_found_bool
+   {\bool_if:NT\g__bnd_font_search_bool
+     {\tl_set:Nn\l__bnd_path_tl{#1}
+      \tl_if_in:nnT{#1}{.tfm}{\seq_gput_right:Nn\g__bnd_metric_seq{#1}}
       \bool_set_true:N\l__bnd_found_bool}}
   \bool_if:NF\l__bnd_found_bool
    {\__bn_fail:n{installed~asset~unreadable:~#1;~missing~TDS~files~or~read-policy~restriction}}
@@ -39,5 +58,29 @@
 \cs_set:Npn\__bn_metric:n #1 {\__bnd_path:n{#1.tfm}}
 \NewDocumentCommand\BnTeXInstalledMap{mmmm}
  {\pdfmapline{+#1~#2~<\__bnd_path:n{#3}~<\__bnd_path:n{#4}}}
+% #1 bank (bnf<id>b<k>), #2 face: p (regular) or b (bold). Runs after both faces'
+% tables are loaded. Each glyph's TFM width at 10pt must equal its advance from
+% the MD5-checked tables to within TFM rounding (a few sp).
+\cs_new_protected:Npn\__bnd_check_metrics:nn #1#2
+ {\group_begin:
+  \tex_font:D\l__bnd_metric_font="\__bnd_path:n{#1.tfm}"~at~10pt\scan_stop:
+  \int_set:Nn\l__bnd_bank_int{\str_item:nn{#1}{-1}}
+  \int_step_inline:nnn{0}{255}
+   {\int_set:Nn\l__bnd_gid_int{256*\l__bnd_bank_int+##1}
+    \cs_if_exist:cT{__bnp_m_\int_use:N\l__bnd_gid_int _a}
+     {\int_compare:nNnT
+       {\int_abs:n
+         {\fp_eval:n{round(
+            \str_if_eq:nnTF{#2}{b}
+             {\cs_if_exist_use:cF{__bnb_m_\int_use:N\l__bnd_gid_int _a}
+               {\use:c{__bnp_m_\int_use:N\l__bnd_gid_int _a}}}
+             {\use:c{__bnp_m_\int_use:N\l__bnd_gid_int _a}}
+            *655360/\use:c{__bnp_upem})}
+          -\tex_fontcharwd:D\l__bnd_metric_font ##1}}
+       > {3}
+       {\__bn_fail:n{installed~metrics~changed:~#1}}}}
+  \group_end:}
+\NewDocumentCommand\BnTeXInstalledMetrics{mm}
+ {\seq_if_in:NnT\g__bnd_metric_seq{#1.tfm}{\__bnd_check_metrics:nn{#1}{#2}}}
 \ExplSyntaxOff
 \endinput

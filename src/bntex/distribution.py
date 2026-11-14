@@ -110,6 +110,15 @@ def installed_loader(raw: bytes, assets: dict[str, bytes]) -> bytes:
     required = {n for n in assets if Path(n).suffix in FONT_DIRS}
     if not required.issubset(checks) or maps != 6:
         raise ValueError('Incomplete audited family loader')
+    # Where TeX cannot checksum font files (an installed MiKTeX package), each
+    # bank's metrics are compared with both faces' checked tables, so this runs
+    # last, after the Bold delta is loaded. Elsewhere it does nothing.
+    faces = {'bnf'+FONT_SHA[:16]: 'p', 'bnf'+PINNED_BOLD_SHA256[:16]: 'b'}
+    metrics = [rf'\BnTeXInstalledMetrics{{{bank}}}{{{faces[bank[:-2]]}}}'
+               for bank in sorted(Path(n).stem for n in assets if n.endswith('.tfm'))]
+    if len(metrics) != 6 or out[-1] != r'\endinput':
+        raise ValueError('Incomplete audited family loader')
+    out[-1:-1] = metrics
     extra_checks = [rf'\BnTeXNativeCheckFile{{{n}}}{{{hashlib.md5(assets[n]).hexdigest().upper()}}}'
                     for n in EXTRA_MODULES]
     # The public entry loads the resolver before the first font check.
