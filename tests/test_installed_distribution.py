@@ -144,6 +144,16 @@ def test_project_folder_copy_without_tds_root(tds,tmp_path):
     assert not (damaged/'main.pdf').exists()
 
 
+def test_explicit_interface_name_loads_the_installed_family(tds,tmp_path):
+    empty=tmp_path/'empty-home';empty.mkdir()
+    folder=tmp_path/'explicit';flat_runtime(tds,folder)
+    body=('\\documentclass{article}\n\\usepackage{bntex-native}\n'
+          '\\BnTeXNativeLoadProfile{bntex-native-profile.tex}\n'
+          '\\begin{document}\n\\bnNative{বাংলা আমাদের মাতৃভাষা।}\n\\end{document}\n')
+    rc,log=run(empty,folder,body);assert rc==0,log[-8000:]
+    assert 'বাংলা আমাদের মাতৃভাষা।' in text(folder)
+
+
 def checksum_probe(tree, folder, *, read_policy):
     """Measure the engine primitive before testing the package under that policy.
 
@@ -276,6 +286,10 @@ def test_complete_deterministic_local_archives(tds,tmp_path):
         assert sum(n.endswith('.tfm') for n in z.namelist())==6
     with zipfile.ZipFile(tmp_path/'a/bntex-ctan-candidate.zip') as z:
         assert 'bntex.tds.zip' in z.namelist() and 'bntex/README.md' in z.namelist()
+        # CTAN refuses identical copies of a file in different places.
+        contents = [z.read(n) for n in z.namelist() if not n.endswith('/')]
+        assert len(contents) == len(set(contents))
+        assert not any(n.startswith('bntex/source/bntex/data/') for n in z.namelist())
     with zipfile.ZipFile(tmp_path/'a/bntex-overleaf-starter.zip') as z:
         names=z.namelist()
         assert {'main.tex','README.md','bntex.sty','bntex-default-profile.def',

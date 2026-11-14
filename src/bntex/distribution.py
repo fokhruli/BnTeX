@@ -33,7 +33,7 @@ FONT_DIRS = {'.ttf':'fonts/truetype/public/bntex',
 EXTRA_MODULES = ('bntex.sty', 'bntex-cached.sty', 'bntex-distribution.sty')
 GENERATED_MODULES = ('bntex-default-profile.def', 'bntex-native-profile.tex',
                      'bntex-native-tables.def', 'bntex-native-matchers.def',
-                     'bntex-native-bold.def')
+                     'bntex-native-tounicode.def', 'bntex-native-bold.def')
 SOURCE_MODULES = ('__init__.py', '__main__.py', 'authoring_export.py', 'build.py',
                   'corpus.py', 'distribution.py', 'harfbuzz.py', 'inventory.py',
                   'mining.py', 'native.py', 'native_layout.py', 'native_model.py',
@@ -62,12 +62,22 @@ its exact bytes against the supplied PDF, runs the actual profile compilers,
 and requires an identical distribution manifest. Different toolchain output
 fails explicitly; existing output paths are never overwritten.
 
+The CTAN browsing tree omits bntex/data/, whose files are identical to the
+runtime modules in tex/; rebuild from the complete bntex.tds.zip instead.
+
 This command executes trusted manual source. It is not a sandbox for hostile
 TeX. It never modifies the input installation, publishes files, or authorizes
 publication. Its complete font-containing archives remain maintainer outputs.
 """
 
+# The explicit interface (\BnTeXNativeLoadProfile{bntex-native-profile.tex})
+# reaches the same installed loader without a second identical copy, which
+# CTAN does not accept.
+EXPLICIT_LOADER = (b'% Explicit-interface name for the installed family loader.\n'
+                   b'\\input{bntex-default-profile.def}\n\\endinput\n')
+
 CHECK = re.compile(r'\\BnTeXNativeCheckFile\{([A-Za-z0-9_.-]+)\}\{([0-9A-F]{32})\}')
+ASSET = re.compile(r'\\BnTeXInstalledAsset\{([A-Za-z0-9_.-]+)\}\{[A-Za-z0-9_./-]+\}\{([0-9A-F]{32})\}')
 MAP = re.compile(r'\\pdfmapline\{\+([A-Za-z0-9_-]+) ([A-Za-z0-9_-]+) <([A-Za-z0-9_.-]+) <([A-Za-z0-9_.-]+)\}')
 
 
@@ -110,6 +120,15 @@ def installed_loader(raw: bytes, assets: dict[str, bytes]) -> bytes:
     required = {n for n in assets if Path(n).suffix in FONT_DIRS}
     if not required.issubset(checks) or maps != 6:
         raise ValueError('Incomplete audited family loader')
+    # Where TeX cannot checksum font files (an installed MiKTeX package), each
+    # bank's metrics are compared with both faces' checked tables, so this runs
+    # last, after the Bold delta is loaded. Elsewhere it does nothing.
+    faces = {'bnf'+FONT_SHA[:16]: 'p', 'bnf'+PINNED_BOLD_SHA256[:16]: 'b'}
+    metrics = [rf'\BnTeXInstalledMetrics{{{bank}}}{{{faces[bank[:-2]]}}}'
+               for bank in sorted(Path(n).stem for n in assets if n.endswith('.tfm'))]
+    if len(metrics) != 6 or out[-1] != r'\endinput':
+        raise ValueError('Incomplete audited family loader')
+    out[-1:-1] = metrics
     extra_checks = [rf'\BnTeXNativeCheckFile{{{n}}}{{{hashlib.md5(assets[n]).hexdigest().upper()}}}'
                     for n in EXTRA_MODULES]
     # The public entry loads the resolver before the first font check.
@@ -171,9 +190,8 @@ def assemble(regular_font: Path, bold_font: Path, out: Path, *,
         for n in EXTRA_MODULES: assets[n]=source_resource(n)
         loader=installed_loader(assets['bntex-native-profile.tex'],assets)
         assets['bntex-default-profile.def']=loader
-        # The public default is self-loading; explicit profile loading also works
-        # when the caller has already loaded the distribution resolver.
-        assets['bntex-native-profile.tex']=loader
+        # The public default is self-loading; the explicit name only inputs it.
+        assets['bntex-native-profile.tex']=EXPLICIT_LOADER
         tree=temp/'tds'; tree.mkdir()
         for n,raw in sorted(assets.items()):
             p=tree/tds_path(n);p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(raw)
@@ -253,8 +271,17 @@ def verify(root: Path) -> dict:
     for name in (*EXTRA_MODULES, *MODULES):
         if _read(root/TEX_DIR/name) != _read(root/SOURCE_DIR/'bntex/data'/name):
             raise ValueError(f'Runtime/source module mismatch: {name}')
-    if _read(root/TEX_DIR/'bntex-default-profile.def') != _read(root/TEX_DIR/'bntex-native-profile.tex'):
+    if _read(root/TEX_DIR/'bntex-native-profile.tex') != EXPLICIT_LOADER:
         raise ValueError('Default/explicit installed loaders differ')
+    # The loader must pin exactly the installed runtime files it governs.
+    loader = _read(root/TEX_DIR/'bntex-default-profile.def').decode('ascii', 'replace')
+    pinned = dict(CHECK.findall(loader)); pinned.update(ASSET.findall(loader))
+    governed = {p.name: p for dirname in (TEX_DIR, *FONT_DIRS.values()) for p in (root/dirname).iterdir()}
+    for name in ('bntex-default-profile.def', 'bntex-native-profile.tex'):
+        governed.pop(name, None)
+    if set(pinned) != set(governed) or any(
+            hashlib.md5(_read(governed[n])).hexdigest().upper() != md5 for n, md5 in pinned.items()):
+        raise ValueError('Installed loader does not pin the installed files')
     return m
 
 
@@ -271,6 +298,10 @@ against the MD5 recorded for this release. Do not edit them.
 The first compile shapes every distinct word (about 100 words per second);
 later compiles reuse the shaped words stored in main.bnc and only shape new
 ones. Deleting main.bnc is always safe.
+
+Copying text from Overleaf's PDF preview gives the right Bengali letters, but
+vowel signs drawn before their consonant, and reph, come out in drawing order.
+For exact text, download the PDF and open it in a desktop viewer.
 
 The same files work locally beside any document (TeX Live or MiKTeX).
 Fonts: Noto Serif Bengali Regular and Bold, SIL Open Font License 1.1; code:
@@ -321,6 +352,9 @@ def pack(root: Path, out: Path) -> dict:
         zipwrite(stage/'bntex.tds.zip',runtime)
         browse={}
         for name,raw in runtime.items():
+            # CTAN refuses identical copies. verify() proved these equal bntex/tex/;
+            # the TDS archive inside the upload keeps them for maintainer rebuilds.
+            if name.startswith(SOURCE_DIR+'/bntex/data/'):continue
             if name.startswith(TEX_DIR+'/'):dest='bntex/tex/'+name[len(TEX_DIR)+1:]
             elif name.startswith(DOC_DIR+'/'):dest='bntex/'+name[len(DOC_DIR)+1:]
             elif name.startswith(SOURCE_DIR+'/'):dest='bntex/source/'+name[len(SOURCE_DIR)+1:]

@@ -35,9 +35,19 @@ them there and checks each against the checksum recorded for the release.
 folder printed by `kpsewhich -var-value TEXMFHOME` (usually `~/texmf`). Then
 use `\usepackage{bntex}` in any document.
 
-**MiKTeX.** Installing into a MiKTeX tree is not supported yet. Copy the files
-from `bntex-overleaf-starter.zip` into your document's folder instead; that
-works with MiKTeX and TeX Live alike.
+**MiKTeX.** Make a folder for your own packages (for example
+`C:\Users\you\texmf`), unzip `bntex.tds.zip` into it, and register it once,
+either in MiKTeX Console under *Settings → Directories* or with
+
+```
+initexmf --register-root=C:\Users\you\texmf
+```
+
+If the folder is already registered, refresh MiKTeX's file list after unzipping
+with `initexmf --update-fndb`. Tested with MiKTeX 25.4.
+
+**Any single project.** Copying the files from `bntex-overleaf-starter.zip`
+into a document's folder also works, with MiKTeX and TeX Live alike.
 
 ## Using it
 
@@ -57,8 +67,13 @@ sizes. With `hyperref`, bookmarks and PDF metadata receive the original Unicode
 text. In mathematics, write Bengali inside amsmath's `\text{...}`.
 
 The PDF stores the original Unicode text for every word (`/ActualText`), so
-search and copy-paste return real Bengali in viewers that support it (tested
-with Poppler's `pdftotext`).
+search and copy-paste return the exact Bengali in viewers that read it (tested
+with Poppler's `pdftotext`). Overleaf's preview and Firefox's built-in viewer
+(PDF.js) ignore `/ActualText` and use each glyph's own Unicode text instead.
+The letters come out right, but a vowel sign drawn to the left of its consonant
+(ি, ে, ৈ and the left half of ো, ৌ) or a reph comes out where it is drawn, so
+মোটা copies as েমাটা, and spaces may move. For exact text, download the PDF and
+open it in a desktop viewer that reads `/ActualText`.
 
 ## Speed and the word cache
 
@@ -81,6 +96,8 @@ Measured on Overleaf (TeX Live 2026):
   font, no sans-serif or monospaced Bengali, and no true italic.
 - Line breaks fall between words; Bengali words are never hyphenated.
 - Bengali in `verbatim` or code listings is not supported.
+- Copying from Overleaf's preview or Firefox gives Bengali letters in the order
+  they are drawn, not typed (see above).
 - pdfLaTeX only. For XeLaTeX or LuaLaTeX, use `fontspec`/`polyglossia` with an
   OpenType Bengali font; those engines shape Bengali natively.
 - Tested with the standard classes and the packages listed above, not with every

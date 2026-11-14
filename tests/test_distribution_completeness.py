@@ -64,7 +64,9 @@ def test_candidate_contract_cannot_be_changed_in_manifest(tds,tmp_path,key,value
     (d.DOC_DIR+'/OFL-1.1.txt','Complete pinned font license'),
     (d.DOC_DIR+'/bntex-manual.pdf','Compiled PDF manual'),
     (d.SOURCE_DIR+'/bntex/data/bntex-auto.sty','Runtime/source module mismatch'),
-    (d.TEX_DIR+'/bntex-default-profile.def','Default/explicit installed loaders differ')])
+    (d.TEX_DIR+'/bntex-native-profile.tex','Default/explicit installed loaders differ'),
+    (d.TEX_DIR+'/bntex-default-profile.def','Installed loader does not pin the installed files'),
+    (d.TEX_DIR+'/bntex-native-tounicode.def','Installed loader does not pin the installed files')])
 def test_rehashed_inconsistent_artifact_is_rejected(tds,tmp_path,name,message):
     tree=tmp_path/'tree';shutil.copytree(tds,tree)
     p=tree/name;p.write_bytes(b'replacement')

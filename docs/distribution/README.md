@@ -14,17 +14,30 @@ Regular and Bold fonts.
 
 - **TeX Live:** unzip `bntex.tds.zip` into `TEXMFHOME` (see
   `kpsewhich -var-value TEXMFHOME`) or another TEXMF tree.
-- **Overleaf, MiKTeX or any single project:** place the runtime files (`tex/latex/bntex/*`
+- **MiKTeX:** unzip `bntex.tds.zip` into a folder of your own and register it
+  as a root, in MiKTeX Console (*Settings → Directories*) or with
+  `initexmf --register-root=<folder>`. In a root that is already registered,
+  run `initexmf --update-fndb` after unzipping.
+- **Overleaf or any single project:** place the runtime files (`tex/latex/bntex/*`
   and `fonts/*/*/bntex/*`) in the document's own folder. The release's
-  `bntex-overleaf-starter.zip` is such a project, ready to upload to Overleaf.
+  `bntex-overleaf-starter.zip` is such a project, ready to upload to Overleaf;
+  the same layout works locally with TeX Live or MiKTeX.
 
 The resolver first looks for each runtime asset in the standard TEXMF roots. If
 none resolves, it checks the asset by bare name, which finds copies beside the
-document, against the same pinned MD5. MiKTeX does not expand `$TEXMF...` roots
-in file names, and its input search does not reach `fonts/`. An installed MiKTeX
-TDS tree is therefore not yet supported; copying the files beside the document
-works. Do not copy only the `.sty` files or rebuild profiles as a document
-author: a missing or changed asset stops compilation with an error.
+document, against the same pinned MD5. MiKTeX's pdfTeX expands no `$TEXMF...`
+roots and cannot checksum files under `fonts/`. On MiKTeX only, BnTeX therefore
+finds installed font files through MiKTeX's font search and compares every
+metric file, glyph by glyph, with the MD5-checked shaping tables; the encoding
+and TrueType files cannot be checked there. Do not copy only the `.sty` files or
+rebuild profiles as a document author: a missing or changed asset stops
+compilation with an error.
+
+Copy and search: every word carries its original text as `/ActualText`, which
+viewers such as Poppler's return exactly. Viewers that ignore it, including
+Overleaf's preview and Firefox's built-in viewer (PDF.js), use each glyph's
+Unicode text: the letters are right, but vowel signs drawn left of their
+consonant and reph come out in drawing order.
 
 Restrictive `openin_any=p` behaviour differs between engines. The tests probe
 each checksum primitive, then require either correct rendering with corruption

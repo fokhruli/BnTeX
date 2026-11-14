@@ -17,19 +17,22 @@
 Version 0.2.0-alpha\quad|\quad BnTeX contributors\par\medskip
 \textbf{Status.} Alpha release. Only the bundled Noto Serif Bengali Regular and
 Bold fonts are supported. Tested with TeX Live 2023 (Linux), TeX Live 2026 on
-Overleaf, and MiKTeX 25.4 with the files beside the document.
+Overleaf, and MiKTeX 25.4 (installed, and with the files beside the document).
 
 \section{Installing}
 \textbf{TeX Live.} Unzip \texttt{bntex.tds.zip} into \texttt{TEXMFHOME}
 (\texttt{kpsewhich -var-value TEXMFHOME}) or another TEXMF tree.
 
-\textbf{Overleaf, MiKTeX, or a single project.} Place the runtime files from
+\textbf{MiKTeX.} Unzip \texttt{bntex.tds.zip} into a folder of your own and
+register it as a root, in MiKTeX Console (\emph{Settings, Directories}) or with
+\texttt{initexmf -{}-register-root=}\emph{folder}. In a root that is already
+registered, run \texttt{initexmf -{}-update-fndb} after unzipping.
+
+\textbf{Overleaf or a single project.} Place the runtime files from
 \texttt{tex/latex/bntex/} and \texttt{fonts/*/*/bntex/} in the document's own
 folder. The release's \texttt{bntex-overleaf-starter.zip} is such a project:
 upload it with Overleaf's \emph{New Project, Upload Project} and keep the
-pdfLaTeX compiler. An installed MiKTeX TDS tree is not yet supported, because
-MiKTeX neither expands \texttt{\$TEXMF} roots in file names nor searches
-\texttt{fonts/} for input files.
+pdfLaTeX compiler. The same layout works locally with TeX Live or MiKTeX.
 
 \section{The author interface}
 Load one package:
@@ -73,6 +76,12 @@ The accompanying \texttt{bntex-example.tex} contains real Bengali source.
 Bengali in mathematics belongs in amsmath's \texttt{\string\text\{...\}};
 this is not a Bengali math alphabet or a verbatim Unicode-font package.
 
+\textbf{Searching and copying.} Every word carries its original text as
+\texttt{/ActualText}, which viewers such as Poppler's return exactly. Viewers
+that ignore it, including Overleaf's preview and Firefox's built-in viewer
+(PDF.js), use each glyph's Unicode text: the letters are right, but vowel signs
+drawn left of their consonant and reph come out in drawing order.
+
 \section{Legacy migration}
 The older \texttt{bntex} package name selected a prepared-word cache. It no
 longer does so by default. Such documents must select
@@ -108,6 +117,11 @@ Font-format searches differ from ordinary TeX input searches. The loader checks
 assets in standard TeX Live roots and reuses the same verified paths for maps
 and metrics. Moving the whole TDS tree needs no rebuilt profile or baked-in
 installation path. Missing or changed checked assets stop compilation.
+MiKTeX's pdfTeX expands no \texttt{\$TEXMF} roots and cannot checksum files
+under \texttt{fonts/}. On MiKTeX only, the loader then finds the installed font
+files through MiKTeX's font search and compares every metric file, glyph by
+glyph, with the MD5-checked shaping tables; the encoding and TrueType files
+cannot be checked there.
 
 Archive verification independently requires the complete file set, so deleting
 both a file and its manifest entry still fails. Complete license text, matching
