@@ -16,7 +16,10 @@
 - CTAN archive: no file is stored twice. `bntex-native-profile.tex` now inputs
   `bntex-default-profile.def`, and the browsing tree omits `source/bntex/data/`,
   which repeats `tex/`; the TDS archive inside it keeps everything.
-- Release archives are identical whether built on Windows or Linux.
+- Release archives no longer depend on the build machine's line endings or zip
+  settings. The Overleaf starter is byte-identical whether built on Windows or
+  Linux; the TDS and CTAN archives also contain the compiled manual, whose PDF
+  bytes depend on the TeX installation that builds it.
 
 ## 0.2.0-alpha — first public alpha (release candidate)
 
