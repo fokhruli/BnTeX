@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — CTAN preparation
+
+- Copy and search in PDF viewers that ignore `/ActualText`, such as Overleaf's
+  preview and Firefox's built-in viewer (PDF.js), now give real Bengali text
+  instead of font codes. A new generated module, `bntex-native-tounicode.def`,
+  gives each glyph its Unicode text. In those viewers, vowel signs drawn to the
+  left of a consonant and reph still come out on the side where they are drawn.
+  Viewers that read `/ActualText` keep the exact text.
+- Installed MiKTeX packages: MiKTeX's pdfTeX cannot checksum files under
+  `fonts/`, so on MiKTeX only, BnTeX finds them through MiKTeX's font search and
+  checks every metric file against the checked shaping tables instead.
+- CTAN archive: no file is stored twice. `bntex-native-profile.tex` now inputs
+  `bntex-default-profile.def`, and the browsing tree omits `source/bntex/data/`,
+  which repeats `tex/`; the TDS archive inside it keeps everything.
+- Release archives are identical whether built on Windows or Linux.
+
 ## 0.2.0-alpha — first public alpha (release candidate)
 
 What document authors get:
