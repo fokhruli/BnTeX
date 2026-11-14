@@ -6,7 +6,7 @@ their positioning. The shaping runs inside pdfTeX itself, so there is no
 XeLaTeX or LuaLaTeX, no shell escape, no external program and no per-document
 preprocessing. It works on Overleaf with the default pdfLaTeX compiler.
 
-**Status: alpha (0.2.0-alpha).** It renders the exact Noto Serif Bengali
+**Status: alpha (0.2.1-alpha).** It renders the exact Noto Serif Bengali
 Regular and Bold fonts bundled with the release, and nothing else yet. Please
 report anything that renders wrongly (see [Reporting problems](#reporting-problems)).
 

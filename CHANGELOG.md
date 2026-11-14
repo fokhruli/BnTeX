@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased — CTAN preparation
+## 0.2.1-alpha — CTAN preparation (2026-11-14)
+
+- Version 0.2.1-alpha: the CTAN upload and its archives differ from the
+  0.2.0-alpha GitHub release, so they carry their own version.
+- The shipped README and manual name the home page and issue tracker;
+  FONT-NOTICES.md names which installed file is which font.
 
 - Copy and search in PDF viewers that ignore `/ActualText`, such as Overleaf's
   preview and Firefox's built-in viewer (PDF.js), now give real Bengali text
